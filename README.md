@@ -1,1 +1,1 @@
-# comp-arch
+# Computer Architecture
