@@ -86,5 +86,25 @@ package types;
   localparam logic FUNCT7_5_OR = 1'b0;
   localparam logic FUNCT7_5_AND = 1'b0;
 
+  // ALU Control
+  typedef enum logic [3:0] {
+    ALU_ADD,
+    ALU_SUB,
+    ALU_SLL,
+    ALU_SLT,
+    ALU_SLTU,
+    ALU_XOR,
+    ALU_SRL,
+    ALU_SRA,
+    ALU_OR,
+    ALU_AND,
+    ALU_BEQ,
+    ALU_BNE,
+    ALU_BLT,
+    ALU_BGE,
+    ALU_BLTU,
+    ALU_BGEU
+  } alu_control_t;
+
   // verilog_lint: waive-end parameter-name-style
 endpackage
