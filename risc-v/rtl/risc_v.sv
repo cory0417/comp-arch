@@ -8,8 +8,6 @@ module risc_v (
     output logic [31:0] mem_wa,  // address to write in memory
     output logic [31:0] mem_wd,  // memory write at clk posedge
     input logic [31:0] mem_rd,  // memory read at clk posedge
-
-    output logic [31:0] pc,  // program counter
     output logic [2:0] mem_funct3  // function code for memory operation
 );
 
@@ -72,7 +70,7 @@ module risc_v (
   );
 
   /*--- PROGRAM COUNTER ---*/
-  logic [31:0] pc_next;
+  logic [31:0] pc_next, pc;
 
   pc_selector u_pc_selector (
       .pc_src(pc_src),  // from control unit
