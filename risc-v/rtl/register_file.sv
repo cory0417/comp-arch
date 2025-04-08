@@ -2,13 +2,13 @@
 
 module register_file (
     input logic clk,
-    input logic [4:0] a1,
-    a2,  // source register address
+    input logic [4:0] a1,  // source register address 2
+    input logic [4:0] a2,  // source register address 2
     input logic [4:0] a3,  // destination register address
     input logic [31:0] wd,  // write data
     input logic wen,  // write enable
-    output logic [31:0] rd1,
-    rd2  // read data
+    output logic [31:0] rd1,  // read data 1
+    output logic [31:0] rd2  // read data 2
 );
 
   logic [31:0] registers[32];
