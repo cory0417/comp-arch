@@ -19,8 +19,9 @@ module risc_v (
   logic [ 2:0] result_src;
   logic alu_src, reg_wen;
   logic [1:0] pc_src;
-  alu_control_t alu_control;
+  logic [3:0] alu_control;
   instruction_t instruction_type;
+  logic [31:0] imm_ext;
 
   logic [6:0] op;
   logic [2:0] funct3;
@@ -37,7 +38,7 @@ module risc_v (
       .result_src(result_src),
       .alu_control(alu_control),
       .alu_src(alu_src),
-      .instruction_type(instruction_type),
+      .instruction_type(instruction_type)
   );
 
   /*--- REGISTER FILE ---*/
@@ -65,7 +66,6 @@ module risc_v (
   );
 
   /*--- IMMEDIATE EXTENDER ---*/
-  logic [31:0] imm_ext;
   imm_extender u_imm_extender (
       .instr  (instr),
       .imm_ext(imm_ext)
@@ -84,7 +84,7 @@ module risc_v (
   );
 
   /*--- ALU ---*/
-  logic [31:0] alu_in1, alu_in2, alu_result;
+  logic [31:0] alu_in1, alu_in2;
   assign alu_in1 = rs1;
   assign alu_in2 = alu_src ? imm_ext : rs2;
 
@@ -93,7 +93,7 @@ module risc_v (
       .alu_control(alu_control),  // from control unit
       .alu_in1(alu_in1),
       .alu_in2(alu_in2),
-      .alu_result(alu_result),
+      .alu_result(alu_result)
   );
 
   /*--- Register File Writeback ---*/
@@ -102,7 +102,7 @@ module risc_v (
       0: rd_data = alu_result;  // OP_IMM, OP_REG
       1: rd_data = imm_ext;  // OP_LUI
       2: rd_data = pc + imm_ext;  // OP_AUIPC
-      3: rd_data = pc_4;  // OP_JAL, OP_JALR
+      3: rd_data = pc + 4;  // OP_JAL, OP_JALR
       4: rd_data = mem_rd;  // OP_LOAD
       default: rd_data = 32'b0;  // No write data
     endcase

@@ -7,7 +7,7 @@ module control (
 
     output logic [1:0] pc_src,  // mux select for program counter
     output logic [2:0] result_src,  // mux select for result
-    output logic [2:0] alu_control,  // ALU function control
+    output logic [3:0] alu_control,  // ALU function control
     output logic alu_src,  // mux select for ALU operand (immediate or read data)
     output instruction_t instruction_type  // instruction type
 );
