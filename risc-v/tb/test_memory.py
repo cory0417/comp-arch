@@ -172,8 +172,61 @@ async def test_memory_read_data_byte_signed(dut):
     assert dut.read_data.value == byte_3
 
 
+@cocotb.test()
+async def test_memory_write_word(dut):
+    init_clock(dut)
+    dut.funct3.value = 0b010
+    dut.write_mem.value = 1
+    dut.read_address.value = 0
+    dut.write_address.value = 0
+    dut.write_data.value = 0x12345789
+
+    await RisingEdge(dut.clk)
+    dut.write_mem.value = 0
+    await RisingEdge(dut.clk)
+
+    await Timer(1, units="ns")
+
+    assert dut.read_data.value == 0x12345789
+
+
+async def test_memory_write_hw(dut):
+    init_clock(dut)
+    dut.funct3.value = 0b001
+    dut.write_mem.value = 1
+    dut.read_address.value = 0
+    dut.write_address.value = 0
+    dut.write_data.value = 0x1234
+
+    await RisingEdge(dut.clk)
+    dut.write_mem.value = 0
+    dut.funct3.value = 0b101
+    await RisingEdge(dut.clk)
+
+    await Timer(1, units="ns")
+
+    assert dut.read_data.value == 0x1234
+
+
+async def test_memory_write_byte(dut):
+    init_clock(dut)
+    dut.funct3.value = 0b000
+    dut.write_mem.value = 1
+    dut.read_address.value = 0
+    dut.write_address.value = 0
+    dut.write_data.value = 0x12
+
+    await RisingEdge(dut.clk)
+    dut.write_mem.value = 0
+    dut.funct3.value = 0b100
+    await RisingEdge(dut.clk)
+
+    await Timer(1, units="ns")
+
+    assert dut.read_data.value == 0x12
+
+
 def test_memory():
-    parent_dir = pathlib.Path(__file__).parent
     runner = get_runner("icarus")
     runner.build(
         verilog_sources=["../rtl/memory.sv"],
