@@ -7,7 +7,7 @@ from test_control import PCSrc
 
 
 @cocotb.test()
-async def test_alu_operand_src(dut):
+async def test_addi_add(dut):
     init_clock(dut)
 
     instr_1 = 0b00000000001000000000000010010011  # addi x1, x0, 2
@@ -21,7 +21,7 @@ async def test_alu_operand_src(dut):
     # At EXECUTE state; instr is loaded
 
     # Set the next instruction by manually setting the read data from memory
-    instr_2 = 0b00000000000100000000000100110011  # add x2, x0, x1
+    instr_2 = 0b00000000000100001000000100110011  # add x2, x1, x1
     dut.mem_rd.value = instr_2
 
     await Timer(1, units="ns")
@@ -45,7 +45,7 @@ async def test_alu_operand_src(dut):
 
     await RisingEdge(dut.clk)
     await Timer(1, units="ns")
-    assert dut.u_register_file.registers[2].value == 2
+    assert dut.u_register_file.registers[2].value == 2 + 2
 
 
 def test_risc_v():
