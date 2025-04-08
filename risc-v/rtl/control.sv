@@ -4,14 +4,12 @@ module control (
     input logic [6:0] op,
     input logic [2:0] funct3,
     input logic funct7_5,
-    input logic alu_zero,  // ALU zero flag
 
     output logic [1:0] pc_src,  // mux select for program counter
     output logic [2:0] result_src,  // mux select for result
     output logic [2:0] alu_control,  // ALU function control
     output logic alu_src,  // mux select for ALU operand (immediate or read data)
-    output instruction_t instruction_type,  // instruction type
-    output logic mem_wen  // write enable for memory
+    output instruction_t instruction_type  // instruction type
 );
   always_comb begin
     unique case (op)
