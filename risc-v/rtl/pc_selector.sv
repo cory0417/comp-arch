@@ -1,4 +1,4 @@
-module pc (
+module pc_selector (
     input  logic [ 1:0] pc_src,
     input  logic [31:0] rs1,
     input  logic [31:0] imm,
@@ -12,6 +12,7 @@ module pc (
   * 3. pc_branch = pc + imm_ext_b OR pc = pc + 4; predicate-dependent
   * 4. pc_4 = pc + 4; default
   */
+  logic [31:0] pc_jalr, pc_jal, pc_branch, pc_4;
   assign pc_4 = pc + 4;  // PC + 4
   assign pc_jalr = rs1 + imm;  // JALR
   assign pc_jal = pc + imm;  // JAL
@@ -23,8 +24,8 @@ module pc (
 
 `ifdef COCOTB_SIM
   initial begin
-    $dumpfile("pc_tb.vcd");
-    $dumpvars(0, pc);
+    $dumpfile("pc_selector_tb.vcd");
+    $dumpvars(0, pc_selector);
   end
 `endif
 endmodule
