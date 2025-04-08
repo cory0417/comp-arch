@@ -34,7 +34,6 @@ def test_memory():
         always=True,
         clean=True,
         verbose=True,
-        waves=True,
         timescale=("1ns", "1ns"),
         build_args=[
             f'-Pmemory.INIT_FILE="{parent_dir}/rv32i_test"'

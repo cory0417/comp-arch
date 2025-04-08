@@ -349,6 +349,12 @@ module memory #(
     end
   end
 
+`ifdef COCOTB_SIM
+  initial begin
+    $dumpfile("memory_tb.vcd");
+    $dumpvars(0, memory);
+  end
+`endif
 endmodule
 
 module memory_array #(
