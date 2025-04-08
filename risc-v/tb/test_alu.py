@@ -168,7 +168,7 @@ async def test_bgeu(dut):
     assert dut.alu_result.value == 1
 
 
-def test_register_file():
+def test_alu():
     runner = get_runner("icarus")
     runner.build(
         verilog_sources=["../rtl/types.sv", "../rtl/alu.sv"],
