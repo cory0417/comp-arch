@@ -10,11 +10,6 @@ module top (
   logic mem_wen;
   logic [2:0] mem_funct3;
 
-  initial begin
-    // Fetch from the start
-    mem_ra = 0;
-  end
-
   risc_v u_risc_v (
       .clk(clk),
       .mem_wen(mem_wen),
@@ -22,7 +17,7 @@ module top (
       .mem_wa(mem_wa),
       .mem_wd(mem_wd),
       .mem_rd(mem_rd),
-      .mem_funct3(mem_funct3),
+      .mem_funct3(mem_funct3)
   );
 
   memory u_memory (
