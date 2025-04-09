@@ -1,4 +1,6 @@
-module top (
+module top #(
+    parameter string INIT_FILE = ""
+) (
     input  logic clk,
     output logic LED,
     output logic RGB_R,
@@ -6,7 +8,7 @@ module top (
     output logic RGB_B
 );
 
-  logic [31:0] pc, mem_ra, mem_wa, mem_rd, mem_wd;
+  logic [31:0] mem_ra, mem_wa, mem_rd, mem_wd;
   logic mem_wen;
   logic [2:0] mem_funct3;
 
@@ -20,7 +22,9 @@ module top (
       .mem_funct3(mem_funct3)
   );
 
-  memory u_memory (
+  memory #(
+      .INIT_FILE(INIT_FILE)
+  ) u_memory (
       .clk(clk),
       .write_mem(mem_wen),
       .funct3(mem_funct3),
