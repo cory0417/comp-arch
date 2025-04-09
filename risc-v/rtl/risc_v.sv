@@ -45,7 +45,6 @@ module risc_v (
   assign rs1_addr = instr[19:15];
   assign rs2_addr = instr[24:20];
   assign rd_addr  = instr[11:7];
-  assign reg_wen  = !(op == OP_BRANCH | op == OP_STORE);  // No write enable for branch and store
 
   // Memory-related signals based on instruction
   assign mem_wd   = rs2;  // Write data to memory is always rs2
@@ -108,6 +107,23 @@ module risc_v (
 
   /*--- STATE MACHINE ---*/
   cpu_state_t state;
+  // No write enable for branch and store
+  assign reg_wen = !(op == OP_BRANCH | op == OP_STORE) & (state != FETCH_INSTR);
+  always_comb begin
+    if (state == WAIT_MEM) begin
+      mem_ra = pc;
+      mem_funct3 = 3'b010;  // funct3 for instruction fetch
+    end else begin  // state == FETCH_INSTR or EXECUTE
+      if (op == OP_LOAD | op == OP_STORE) begin
+        mem_ra = rs1 + imm_ext;  // Address to load from during execution
+        mem_funct3 = funct3;  // funct3 for load/store instructions
+      end else begin
+        mem_ra = pc_next;  // Update memory address for instruction fetch
+        mem_funct3 = 3'b010;  // funct3 for instruction fetch
+      end
+    end
+  end
+
 
   always_ff @(posedge clk) begin
     case (state)
@@ -119,19 +135,13 @@ module risc_v (
         pc <= pc_next;
         // Two cases for next state
         if (op == OP_LOAD | op == OP_STORE) begin
-          mem_ra <= rs1 + imm_ext;  // Address to load from during execution
-          mem_funct3 <= funct3;  // funct3 for load/store instructions
           state <= WAIT_MEM;  // Wait for memory operation
         end else begin
-          mem_funct3 <= 3'b010;  // funct3 for instruction fetch
-          mem_ra <= pc_next;  // Update memory address
           state <= FETCH_INSTR;  // Go back to fetch next instruction
         end
       end
       default: begin  // state == WAIT_MEM
-        state <= FETCH_INSTR;
-        mem_ra <= pc;
-        mem_funct3 <= 3'b010;  // funct3 for instruction fetch
+        state <= FETCH_INSTR;  // Just need this extra state to wait for memory
       end
     endcase
   end
