@@ -20,12 +20,12 @@ module alu (
     case (alu_control)
       ALU_ADD:  alu_result = add_result;
       ALU_SUB:  alu_result = sub_result;
-      ALU_SLL:  alu_result = alu_in1 << alu_in2;
+      ALU_SLL:  alu_result = alu_in1 << (alu_in2 & 5'b11111);
       ALU_SLT:  alu_result = lt;
       ALU_SLTU: alu_result = ltu;
       ALU_XOR:  alu_result = alu_in1 ^ alu_in2;
-      ALU_SRL:  alu_result = alu_in1 >> alu_in2;
-      ALU_SRA:  alu_result = $signed(alu_in1) >>> alu_in2;
+      ALU_SRL:  alu_result = alu_in1 >> (alu_in2 & 5'b11111);
+      ALU_SRA:  alu_result = $signed(alu_in1) >>> (alu_in2 & 5'b11111);
       ALU_OR:   alu_result = alu_in1 | alu_in2;
       ALU_AND:  alu_result = alu_in1 & alu_in2;
       // Branch instructions
