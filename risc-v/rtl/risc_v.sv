@@ -146,6 +146,10 @@ module risc_v (
       end
     endcase
   end
+
+  initial begin
+    pc = 32'hFFFFFFFC;  // Initialize program counter to -4 to start at 0 when it loads pc+4
+  end
 `ifdef COCOTB_SIM
   initial begin
     $dumpfile("risc_v_tb.vcd");
