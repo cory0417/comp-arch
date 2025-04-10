@@ -14,9 +14,9 @@ module pc_selector (
   */
   logic [31:0] pc_jalr, pc_jal, pc_branch, pc_4;
   assign pc_4 = pc + 4;  // PC + 4
-  assign pc_jalr = rs1 + imm;  // JALR
-  assign pc_jal = pc + imm;  // JAL
-  assign pc_branch = pc + imm;  // Branch instruction (BEQ, BNE, etc.)
+  assign pc_jalr = rs1 + $signed(imm);  // JALR
+  assign pc_jal = pc + $signed(imm);  // JAL
+  assign pc_branch = pc + $signed(imm);  // Branch instruction (BEQ, BNE, etc.)
 
   assign pc_next = (pc_src == 2'b00) ? pc_jalr :
                    (pc_src == 2'b01) ? pc_jal :
