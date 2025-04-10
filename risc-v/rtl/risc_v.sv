@@ -114,7 +114,7 @@ module risc_v (
       mem_ra = pc;
       mem_funct3 = 3'b010;  // funct3 for instruction fetch
     end else begin  // state == FETCH_INSTR or EXECUTE
-      if (op == OP_LOAD | op == OP_STORE) begin
+      if (op == OP_LOAD) begin
         mem_ra = rs1 + imm_ext;  // Address to load from during execution
         mem_funct3 = funct3;  // funct3 for load/store instructions
       end else begin
@@ -128,11 +128,12 @@ module risc_v (
   always_ff @(posedge clk) begin
     case (state)
       FETCH_INSTR: begin
+        if (op == OP_JAL) pc <= pc_next;
         state <= EXECUTE;
         instr <= mem_rd;
       end
       EXECUTE: begin
-        pc <= pc_next;
+        if (op != OP_JAL) pc <= pc_next;
         // Two cases for next state
         if (op == OP_LOAD | op == OP_STORE) begin
           state <= WAIT_MEM;  // Wait for memory operation
