@@ -149,6 +149,7 @@ module risc_v (
 
   initial begin
     pc = 32'hFFFFFFFC;  // Initialize program counter to -4 to start at 0 when it loads pc+4
+    state = FETCH_INSTR;  // Start in instruction fetch state
   end
 `ifdef COCOTB_SIM
   initial begin
