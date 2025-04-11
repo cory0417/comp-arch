@@ -149,7 +149,14 @@ module memory #(
   );
 
   // Handle memory reads
-  assign mem_read_enable = (read_address[31:13] == 19'd0);
+  // assign mem_read_enable = (read_address[31:13] == 19'd0);
+  logic mem_read_enable_comb;
+  assign mem_read_enable_comb = (read_address[31:13] == 19'd0);
+  initial mem_read_enable = 1'b1;
+
+  always_ff @(posedge clk) begin
+    mem_read_enable <= mem_read_enable_comb;
+  end
   assign read_val = mem_read_enable ? { mem_read_data3, mem_read_data2, mem_read_data1, mem_read_data0 } : read_value;
 
   always_ff @(posedge clk) begin

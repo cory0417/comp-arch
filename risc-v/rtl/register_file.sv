@@ -12,29 +12,28 @@ module register_file (
 );
 
   logic [31:0] registers[32];
-  logic reset_n;  // active low reset for simulation
+  logic [31:0] rd1_local, rd2_local;
 
   initial begin
     // Initialize registers to zero
     for (int i = 0; i < 32; i++) begin
       registers[i] = 32'b0;
     end
-    reset_n = 1'b1;
+  end
+
+  always_comb begin
+    rd1_local = (a1 != 0) ? registers[a1] : 32'b0;
+    rd2_local = (a2 != 0) ? registers[a2] : 32'b0;
   end
 
   always_ff @(posedge clk) begin
-    if (wen) begin
-      if (a3 != 0) registers[a3] <= wd;  // block writing to x0 (zero register)
-    end
-    if (~reset_n) begin
-      for (int i = 0; i < 32; i++) begin
-        registers[i] <= 32'b0;  // reset all registers to zero
-      end
+    if (wen && a3 != 5'd0) begin
+      registers[a3] <= wd;
     end
   end
 
-  assign rd1 = registers[a1];
-  assign rd2 = registers[a2];
+  assign rd1 = rd1_local;
+  assign rd2 = rd2_local;
 
 `ifdef COCOTB_SIM
   integer i;

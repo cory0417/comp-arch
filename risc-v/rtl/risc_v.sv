@@ -26,6 +26,11 @@ module risc_v (
   assign op = instr[6:0];
   assign funct3 = instr[14:12];
 
+  logic is_store, is_load, is_branch, is_jal;
+  assign is_store  = (op == OP_STORE);
+  assign is_load   = (op == OP_LOAD);
+  assign is_branch = (op == OP_BRANCH);
+  assign is_jal    = (op == OP_JAL);
 
   /*--- CONTROL ---*/
   control u_control (
@@ -49,7 +54,7 @@ module risc_v (
   // Memory-related signals based on instruction
   assign mem_wd   = rs2;  // Write data to memory is always rs2
   assign mem_wa   = rs1 + imm_ext;  // Address to write in memory is always rs1 + immediate
-  assign mem_wen  = op == OP_STORE;  // Memory write enable only for store
+  assign mem_wen  = is_store;  // Memory write enable only for store
 
   register_file u_register_file (
       .clk(clk),
@@ -108,18 +113,16 @@ module risc_v (
   /*--- STATE MACHINE ---*/
   cpu_state_t state;
   // No write enable for branch and store
-  assign reg_wen = !(op == OP_BRANCH | op == OP_STORE) & (state != FETCH_INSTR);
+  assign reg_wen = !(is_branch | is_store) & (state != FETCH_INSTR);
+  assign mem_funct3 = ((is_load | is_store) & state != WAIT_MEM) ? funct3 : 3'b010;
   always_comb begin
     if (state == WAIT_MEM) begin
       mem_ra = pc;
-      mem_funct3 = 3'b010;  // funct3 for instruction fetch
     end else begin  // state == FETCH_INSTR or EXECUTE
-      if (op == OP_LOAD) begin
+      if (is_load) begin
         mem_ra = rs1 + imm_ext;  // Address to load from during execution
-        mem_funct3 = funct3;  // funct3 for load/store instructions
       end else begin
         mem_ra = pc_next;  // Update memory address for instruction fetch
-        mem_funct3 = 3'b010;  // funct3 for instruction fetch
       end
     end
   end
@@ -128,14 +131,14 @@ module risc_v (
   always_ff @(posedge clk) begin
     case (state)
       FETCH_INSTR: begin
-        if (op == OP_JAL) pc <= pc_next;
+        if (is_jal) pc <= pc_next;
         state <= EXECUTE;
         instr <= mem_rd;
       end
       EXECUTE: begin
         if (op != OP_JAL) pc <= pc_next;
         // Two cases for next state
-        if (op == OP_LOAD | op == OP_STORE) begin
+        if (is_load | is_store) begin
           state <= WAIT_MEM;  // Wait for memory operation
         end else begin
           state <= FETCH_INSTR;  // Go back to fetch next instruction
@@ -148,8 +151,8 @@ module risc_v (
   end
 
   initial begin
-    pc = 32'hFFFFFFFC;  // Initialize program counter to -4 to start at 0 when it loads pc+4
-    state = FETCH_INSTR;  // Start in instruction fetch state
+    pc = 32'b0;  // Initialize program counter to -4 to start at 0 when it loads pc+4
+    state = WAIT_MEM;  // Start in instruction fetch state
   end
 `ifdef COCOTB_SIM
   initial begin

@@ -5,8 +5,10 @@ module imm_extender (
     output logic [31:0] imm_ext
 );
 
+  logic [6:0] op;
+  assign op = instr[6:0];
   always_comb begin
-    case (instr[6:0])
+    case (op)
       OP_IMM, OP_JALR, OP_LOAD: begin  // 12 bits, sign-extended to 32 bits
         imm_ext = {{20{instr[31]}}, instr[31:20]};
       end
