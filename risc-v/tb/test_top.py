@@ -3,14 +3,18 @@ import pathlib
 import cocotb
 from cocotb.triggers import ClockCycles, Timer
 from cocotb.runner import get_runner
-from utils import init_clock, write_to_memory
+from utils import init_clock, write_program_to_memory, load_hex_from_txt
 
 parent_dir = pathlib.Path(__file__).parent
 
 
 @cocotb.test()
-async def test_instruction_results(dut):
+async def test_r_i_u_s_instructions(dut):
     init_clock(dut)
+
+    data = load_hex_from_txt(parent_dir / "rv32i_test.txt")
+    # Writing the instructions to memory
+    write_program_to_memory(dut, data)
 
     await ClockCycles(
         dut.clk, 23
@@ -65,9 +69,10 @@ def test_top():
         clean=True,
         verbose=True,
         timescale=("1ns", "1ns"),
-        build_args=[
-            f'-Ptop.INIT_FILE="{parent_dir}/rv32i_test"'
-        ],  # Doing the regular parameters dict doesn't seem to work for initial block
+        # NOTE: program can be passed as a parameter here
+        # build_args=[
+        #     f'-Ptop.INIT_FILE="{parent_dir}/rv32i_test"'
+        # ],  # Doing the regular parameters dict doesn't seem to work for initial block
     )
     runner.test(
         hdl_toplevel="top",
