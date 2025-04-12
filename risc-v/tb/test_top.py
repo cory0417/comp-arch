@@ -3,7 +3,7 @@ import pathlib
 import cocotb
 from cocotb.triggers import ClockCycles, Timer
 from cocotb.runner import get_runner
-from utils import init_clock
+from utils import init_clock, write_to_memory
 
 parent_dir = pathlib.Path(__file__).parent
 
@@ -11,9 +11,6 @@ parent_dir = pathlib.Path(__file__).parent
 @cocotb.test()
 async def test_instruction_results(dut):
     init_clock(dut)
-    dut.mem_ra.value = 0
-    dut.u_risc_v.pc.value = 0
-    dut.mem_funct3.value = 0b010  # For reading word at a time
 
     await ClockCycles(
         dut.clk, 23
@@ -32,9 +29,8 @@ async def test_instruction_results(dut):
     assert dut.u_risc_v.u_register_file.registers[9].value == 0x0048D15F
     assert dut.u_risc_v.u_register_file.registers[10].value == 0x12345028
 
-    await ClockCycles(
-        dut.clk, 2
-    )  # store takes 3 cycles, but we already waited 1 extra cycle previously
+    # Now running the load/store instructions
+    await ClockCycles(dut.clk, 3)  # store takes 3 cycles
     await Timer(1, units="ns")
     # Executed sw x1, 98(x5) => store word 0xFEDCBA98 at (98+2)th byte address in memory
     # (98 + 2) / 4 = 25 => 25th byte in block ram memory chunks
