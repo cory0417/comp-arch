@@ -1,12 +1,13 @@
 import cocotb
 from cocotb.triggers import Timer, RisingEdge
 from cocotb.runner import get_runner
-from utils import reset_dut, init_clock
+from utils import init_clock, reset_registers
 
 
 @cocotb.test()
 async def register_read_tb(dut):
     init_clock(dut)
+    reset_registers(dut)
 
     dut.a1.value = 1
     dut.a2.value = 2
@@ -26,6 +27,7 @@ async def register_read_tb(dut):
 @cocotb.test()
 async def register_write_and_read_tb(dut):
     init_clock(dut)
+    reset_registers(dut)
 
     dut.wd.value = 0xDEADBEEF
     dut.a3.value = 1
@@ -55,6 +57,7 @@ async def register_write_and_read_tb(dut):
 @cocotb.test()
 async def register_write_to_zero(dut):
     init_clock(dut)
+    reset_registers(dut)
 
     dut.a1.value = 0
     dut.a3.value = 0
