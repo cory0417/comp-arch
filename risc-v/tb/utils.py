@@ -1,6 +1,7 @@
 import cocotb
 from cocotb.clock import Clock
 from cocotb.triggers import RisingEdge
+from pathlib import Path
 
 
 def init_clock(dut, period_ns=10):
@@ -26,3 +27,13 @@ def write_program_to_memory(dut, data: list[hex]):
         for i in range(len(data), 2048):
             for j, mem_array in enumerate(memory_arrays):
                 mem_array.memory[i].value = 0x00
+
+
+def load_hex_from_txt(path: Path) -> list[hex]:
+    """Load hex file from txt file."""
+    if not path.exists():
+        raise FileNotFoundError(f"File {path} does not exist.")
+
+    # Assumes that each line is a 4-byte hex number in string format
+    with open(path, "r") as f:
+        return [int(line.strip(), 16) for line in f]
