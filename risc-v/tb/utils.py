@@ -37,3 +37,54 @@ def load_hex_from_txt(path: Path) -> list[hex]:
     # Assumes that each line is a 4-byte hex number in string format
     with open(path, "r") as f:
         return [int(line.strip(), 16) for line in f]
+
+
+def reset_registers(u_register_file):
+    """Reset all registers to 0."""
+    for i in range(32):
+        u_register_file.registers[i].value = 0
+
+
+def reset_risc_v(u_risc_v):
+    """Reset RISC-V processor."""
+    u_risc_v.pc.value = 0
+    u_risc_v.state.value = 2  # WAIT_MEM state
+    u_risc_v.instr.value = 0
+    reset_registers(u_risc_v.u_register_file)
+
+
+def get_word_from_memory(u_memory, base_address, offset):
+    """Get memory data at given address."""
+    memory_arrays = [
+        u_memory.mem0,
+        u_memory.mem1,
+        u_memory.mem2,
+        u_memory.mem3,
+    ]
+    address = (base_address + offset) & 0xFFFFFFFF
+
+    if address >= 2048:
+        if (
+            address >> 13
+        ) == 0x7FFFF:  # Equivalent to checking read_address[31:13] == 19'h7FFFF
+            if (
+                address >> 2
+            ) & 0x7FF == 0x7FF:  # Equivalent to read_address[12:2] == 11'h7FF
+                return u_memory.leds.value
+            elif (
+                address >> 2
+            ) & 0x7FF == 0x7FE:  # Equivalent to read_address[12:2] == 11'h7FE
+                return u_memory.millis.value
+            elif (
+                address >> 2
+            ) & 0x7FF == 0x7FD:  # Equivalent to read_address[12:2] == 11'h7FD
+                return u_memory.micros.value
+            else:
+                return 0
+        else:
+            return 0
+    else:
+        return sum(
+            mem_array.memory[address].value << (8 * i)
+            for i, mem_array in enumerate(memory_arrays)
+        )
