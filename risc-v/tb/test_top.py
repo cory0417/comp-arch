@@ -79,11 +79,12 @@ async def test_rgb_cycling(dut):
     Test RGB cycling program.
 
     lui x1, 0xFF000   # lui for led bits; x1 = 0xFF00_0000
-    srai x2, x1, 8    # srai for red bits; x2 = 0xFFFF_0000
+    srli x2, x1, 8    # srai for red bits; x2 = 0x00FF_0000
+    xori x2, x2, -1    # xor for red bits; x2 = 0xFF00_FFFF
     srli x3, x1, 16   # srli for green bits; x3 = 0x0000_FF00
-    add x3, x1, x3    # add for green bits; x3 = 0xFF00_FF00
+    xori x3, x3, -1    # xor for green bits; x3 = 0xFFFF_00FF
     srli x4, x1, 24   # srli for blue bits; x4 = 0x0000_00FF
-    add x4, x1, x4    # add for blue bits; x4 = 0xFF00_00FF
+    xori x4, x4, -1    # xor for blue bits; x4 = 0xFFFF_FF00
     sw x2, -4(x0)     # store red bits at address 0xFFFF_FFFC
     srli x6, x2, 28   # srli for counter; x6 = 0x0000_000F (very small delay for simulation)
     addi x7, x7, 1    # increment counter x7
@@ -107,68 +108,86 @@ async def test_rgb_cycling(dut):
     write_program_to_memory(dut, data)
     await ClockCycles(dut.clk, 2)  # Reprogramming complete
 
-    await ClockCycles(dut.clk, 2)
     # lui x1, 0xFF000
+    await ClockCycles(dut.clk, 2)
     assert registers(1) == 0xFF000000
+
+    # srli x2, x1, 8
     await ClockCycles(dut.clk, 2)
-    # srai x2, x1, 8
-    assert registers(2) == 0xFFFF0000
+    assert registers(2) == 0x00FF0000
+
+    # xori x2, x2, -1
     await ClockCycles(dut.clk, 2)
+    assert registers(2) == 0xFF00FFFF
+
     # srli x3, x1, 16
+    await ClockCycles(dut.clk, 2)
     assert registers(3) == 0x0000FF00
+
+    # xori x3, x3, -1
     await ClockCycles(dut.clk, 2)
-    # add x3, x1, x3
-    assert registers(3) == 0xFF00FF00
-    await ClockCycles(dut.clk, 2)
+    assert registers(3) == 0xFFFF00FF
+
     # srli x4, x1, 24
+    await ClockCycles(dut.clk, 2)
     assert registers(4) == 0x000000FF
+
+    # xori x4, x4, -1
     await ClockCycles(dut.clk, 2)
-    # add x4, x1, x4
-    assert registers(4) == 0xFF0000FF
-    await ClockCycles(dut.clk, 3)
+    assert registers(4) == 0xFFFFFF00
+
     # sw x2, -4(x0)
+    await ClockCycles(dut.clk, 3)
     data = get_word_from_memory(dut.u_memory, 0, -4)
-    assert data == 0xFFFF0000
-    await ClockCycles(dut.clk, 2)
+    assert data == 0xFF00FFFF
+
     # srli x6, x2, 28
+    await ClockCycles(dut.clk, 2)
     assert registers(6) == 0x0000000F
-    await ClockCycles(dut.clk, 2)
+
     # addi x7, x7, 1
-    assert registers(7) == 0x00000001
-    pc_at_branch_instr = dut.u_risc_v.pc.value
     await ClockCycles(dut.clk, 2)
+    assert registers(7) == 0x00000001
+
+    pc_at_branch_instr = dut.u_risc_v.pc.value
     # blt x7, x6, -4
+    await ClockCycles(dut.clk, 2)
     assert dut.u_risc_v.pc.value == pc_at_branch_instr - 4
+
     await ClockCycles(
         dut.clk, (2 + 2) * 14
     )  # after 14 more addi, x7 = 0x0000000F, so branch is avoided
 
-    await ClockCycles(dut.clk, 2)
     # addi x7, x0, 0
+    await ClockCycles(dut.clk, 2)
     assert registers(7) == 0x00000000
-    await ClockCycles(dut.clk, 3)
+
     # sw x3, -4(x0)
+    await ClockCycles(dut.clk, 3)
     data = get_word_from_memory(dut.u_memory, 0, -4)
-    assert data == 0xFF00FF00
+    assert data == 0xFFFF00FF
+
     await ClockCycles(dut.clk, (2 + 2) * 15)  # loop again for blue led 15 times
 
-    await ClockCycles(dut.clk, 2)
     # addi x7, x0, 0
+    await ClockCycles(dut.clk, 2)
     assert registers(7) == 0x00000000
-    await ClockCycles(dut.clk, 3)
+
     # sw x4, -4(x0)
+    await ClockCycles(dut.clk, 3)
     data = get_word_from_memory(dut.u_memory, 0, -4)
-    assert data == 0xFF0000FF
+    assert data == 0xFFFFFF00
+
     await ClockCycles(dut.clk, (2 + 2) * 15)  # loop again for red led 15 times
 
-    await ClockCycles(dut.clk, 2)
     # addi x7, x0, 0
+    await ClockCycles(dut.clk, 2)
     assert registers(7) == 0x00000000
 
     pc_before_jump = dut.u_risc_v.pc.value
+    # jal x0, -52
     await ClockCycles(dut.clk, 2)
     await Timer(1, units="ns")
-    # jal x0, -52
     # jump back to red led sw instruction
     assert dut.u_risc_v.pc.value == pc_before_jump - 52
 
