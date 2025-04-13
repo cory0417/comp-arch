@@ -41,11 +41,11 @@ async def test_r_i_u_s_instructions(dut):
     data = load_hex_from_txt(parent_dir / "rv32i_test.txt")
     # Writing the instructions to memory
     write_program_to_memory(dut, data)
+    await ClockCycles(dut.clk, 2)
 
     await ClockCycles(
-        dut.clk, 23
-    )  # takes (11*2+1) cycles for 11 instructions without memory load/store
-    await Timer(1, units="ns")
+        dut.clk, 22
+    )  # takes (11*2) cycles for 11 instructions without memory load/store
 
     assert registers(0) == 0
     assert registers(1) == 0xFEDCBA98
@@ -61,7 +61,6 @@ async def test_r_i_u_s_instructions(dut):
 
     # Now running the load/store instructions
     await ClockCycles(dut.clk, 3)  # store takes 3 cycles
-    await Timer(1, units="ns")
     # Executed sw x1, 98(x5) => store word 0xFEDCBA98 at (98+2)th byte address in memory
     # (98 + 2) / 4 = 25 => 25th byte in block ram memory chunks
     assert dut.u_memory.mem0.memory[25].value == 0x98
@@ -70,7 +69,6 @@ async def test_r_i_u_s_instructions(dut):
     assert dut.u_memory.mem3.memory[25].value == 0xFE
 
     await ClockCycles(dut.clk, 3)  # load takes 3 cycles
-    await Timer(1, units="ns")
     # Executed lw x11, 98(x5) => load word from (98+2)th byte address in memory to x11
     assert registers(11) == 0xFEDCBA98
 
