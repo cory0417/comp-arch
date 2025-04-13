@@ -87,3 +87,8 @@ def get_word_from_memory(u_memory, base_address, offset_bytes):
             mem_array.memory[address // 4].value << (8 * i)
             for i, mem_array in enumerate(memory_arrays)
         )
+
+
+def get_register_value(u_register_file, reg_num):
+    """Get register value."""
+    return u_register_file.registers[reg_num].value

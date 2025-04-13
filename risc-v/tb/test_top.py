@@ -9,7 +9,9 @@ from utils import (
     load_hex_from_txt,
     reset_risc_v,
     get_word_from_memory,
+    get_register_value,
 )
+from functools import partial
 
 parent_dir = pathlib.Path(__file__).parent
 
@@ -33,6 +35,7 @@ async def test_r_i_u_s_instructions(dut):
     sw x1, 98(x5)           # pc = 0x2C, mem[0x00000002 + 98] = 0xFEDCBA98
     lw x11, 98(x5)          # pc = 0x30, x11 = 0xFEDCBA98
     """
+    registers = partial(get_register_value, dut.u_risc_v.u_register_file)
     init_clock(dut)
 
     data = load_hex_from_txt(parent_dir / "rv32i_test.txt")
@@ -44,17 +47,17 @@ async def test_r_i_u_s_instructions(dut):
     )  # takes (11*2+1) cycles for 11 instructions without memory load/store
     await Timer(1, units="ns")
 
-    assert dut.u_risc_v.u_register_file.registers[0].value == 0
-    assert dut.u_risc_v.u_register_file.registers[1].value == 0xFEDCBA98
-    assert dut.u_risc_v.u_register_file.registers[2].value == 0x0FEDCBA9
-    assert dut.u_risc_v.u_register_file.registers[3].value == 0xFFEDCBA9
-    assert dut.u_risc_v.u_register_file.registers[4].value == 0x00123456
-    assert dut.u_risc_v.u_register_file.registers[5].value == 0x00000002
-    assert dut.u_risc_v.u_register_file.registers[6].value == 0x00123458
-    assert dut.u_risc_v.u_register_file.registers[7].value == 0x00000002
-    assert dut.u_risc_v.u_register_file.registers[8].value == 0x0048D158
-    assert dut.u_risc_v.u_register_file.registers[9].value == 0x0048D15F
-    assert dut.u_risc_v.u_register_file.registers[10].value == 0x12345028
+    assert registers(0) == 0
+    assert registers(1) == 0xFEDCBA98
+    assert registers(2) == 0x0FEDCBA9
+    assert registers(3) == 0xFFEDCBA9
+    assert registers(4) == 0x00123456
+    assert registers(5) == 0x00000002
+    assert registers(6) == 0x00123458
+    assert registers(7) == 0x00000002
+    assert registers(8) == 0x0048D158
+    assert registers(9) == 0x0048D15F
+    assert registers(10) == 0x12345028
 
     # Now running the load/store instructions
     await ClockCycles(dut.clk, 3)  # store takes 3 cycles
@@ -69,7 +72,7 @@ async def test_r_i_u_s_instructions(dut):
     await ClockCycles(dut.clk, 3)  # load takes 3 cycles
     await Timer(1, units="ns")
     # Executed lw x11, 98(x5) => load word from (98+2)th byte address in memory to x11
-    assert dut.u_risc_v.u_register_file.registers[11].value == 0xFEDCBA98
+    assert registers(11) == 0xFEDCBA98
 
 
 @cocotb.test()
@@ -98,6 +101,7 @@ async def test_rgb_cycling(dut):
     addi x7, x0, 0    # reset counter x7 to 0
     jal x0, -52       # jump back up to storing red bits
     """
+    registers = partial(get_register_value, dut.u_risc_v.u_register_file)
     init_clock(dut)
     reset_risc_v(dut.u_risc_v)
     # Writing the instructions to memory
@@ -107,32 +111,32 @@ async def test_rgb_cycling(dut):
 
     await ClockCycles(dut.clk, 2)
     # lui x1, 0xFF000
-    assert dut.u_risc_v.u_register_file.registers[1].value == 0xFF000000
+    assert registers(1) == 0xFF000000
     await ClockCycles(dut.clk, 2)
     # srai x2, x1, 8
-    assert dut.u_risc_v.u_register_file.registers[2].value == 0xFFFF0000
+    assert registers(2) == 0xFFFF0000
     await ClockCycles(dut.clk, 2)
     # srli x3, x1, 16
-    assert dut.u_risc_v.u_register_file.registers[3].value == 0x0000FF00
+    assert registers(3) == 0x0000FF00
     await ClockCycles(dut.clk, 2)
     # add x3, x1, x3
-    assert dut.u_risc_v.u_register_file.registers[3].value == 0xFF00FF00
+    assert registers(3) == 0xFF00FF00
     await ClockCycles(dut.clk, 2)
     # srli x4, x1, 24
-    assert dut.u_risc_v.u_register_file.registers[4].value == 0x000000FF
+    assert registers(4) == 0x000000FF
     await ClockCycles(dut.clk, 2)
     # add x4, x1, x4
-    assert dut.u_risc_v.u_register_file.registers[4].value == 0xFF0000FF
+    assert registers(4) == 0xFF0000FF
     await ClockCycles(dut.clk, 3)
     # sw x2, -4(x0)
     data = get_word_from_memory(dut.u_memory, 0, -4)
     assert data == 0xFFFF0000
     await ClockCycles(dut.clk, 2)
     # srli x6, x2, 28
-    assert dut.u_risc_v.u_register_file.registers[6].value == 0x0000000F
+    assert registers(6) == 0x0000000F
     await ClockCycles(dut.clk, 2)
     # addi x7, x7, 1
-    assert dut.u_risc_v.u_register_file.registers[7].value == 0x00000001
+    assert registers(7) == 0x00000001
     pc_at_branch_instr = dut.u_risc_v.pc.value
     await ClockCycles(dut.clk, 2)
     # blt x7, x6, -4
@@ -143,7 +147,7 @@ async def test_rgb_cycling(dut):
 
     await ClockCycles(dut.clk, 2)
     # addi x7, x0, 0
-    assert dut.u_risc_v.u_register_file.registers[7].value == 0x00000000
+    assert registers(7) == 0x00000000
     await ClockCycles(dut.clk, 3)
     # sw x3, -4(x0)
     data = get_word_from_memory(dut.u_memory, 0, -4)
@@ -152,7 +156,7 @@ async def test_rgb_cycling(dut):
 
     await ClockCycles(dut.clk, 2)
     # addi x7, x0, 0
-    assert dut.u_risc_v.u_register_file.registers[7].value == 0x00000000
+    assert registers(7) == 0x00000000
     await ClockCycles(dut.clk, 3)
     # sw x4, -4(x0)
     data = get_word_from_memory(dut.u_memory, 0, -4)
@@ -161,7 +165,7 @@ async def test_rgb_cycling(dut):
 
     await ClockCycles(dut.clk, 2)
     # addi x7, x0, 0
-    assert dut.u_risc_v.u_register_file.registers[7].value == 0x00000000
+    assert registers(7) == 0x00000000
 
     pc_before_jump = dut.u_risc_v.pc.value
     await ClockCycles(dut.clk, 2)
@@ -191,6 +195,7 @@ async def test_unconditional_jumps(dut):
     5. jal x0, 0x8
     6. sub x4, x3, x1
     """
+    registers = partial(get_register_value, dut.u_risc_v.u_register_file)
     init_clock(dut)
     reset_risc_v(dut.u_risc_v)
     # Writing the instructions to memory
@@ -206,10 +211,10 @@ async def test_unconditional_jumps(dut):
     await ClockCycles(dut.clk, 2)  # Reprogramming complete
 
     await ClockCycles(dut.clk, 12)
-    assert dut.u_risc_v.u_register_file.registers[4].value == 0x00000005
-    assert dut.u_risc_v.u_register_file.registers[3].value == 0x0000000F
-    assert dut.u_risc_v.u_register_file.registers[2].value == 0x00000008
-    assert dut.u_risc_v.u_register_file.registers[1].value == 0x0000000A
+    assert registers(4) == 0x00000005
+    assert registers(3) == 0x0000000F
+    assert registers(2) == 0x00000008
+    assert registers(1) == 0x0000000A
 
 
 @cocotb.test()
@@ -244,6 +249,7 @@ async def test_conditional_jumps(dut):
     12. bge x2, x1, -8
     13. addi x6, x2, 5
     """
+    registers = partial(get_register_value, dut.u_risc_v.u_register_file)
     init_clock(dut)
     reset_risc_v(dut.u_risc_v)
     # Writing the instructions to memory
@@ -264,11 +270,11 @@ async def test_conditional_jumps(dut):
     await ClockCycles(dut.clk, 2)
 
     await ClockCycles(dut.clk, 26)
-    assert dut.u_risc_v.u_register_file.registers[1].value == 0x0000000E
-    assert dut.u_risc_v.u_register_file.registers[2].value == 0x00000009
-    assert dut.u_risc_v.u_register_file.registers[3].value == 0x00000008
-    assert dut.u_risc_v.u_register_file.registers[4].value == 0x0000000E
-    assert dut.u_risc_v.u_register_file.registers[6].value == 0x0000000E
+    assert registers(1) == 0x0000000E
+    assert registers(2) == 0x00000009
+    assert registers(3) == 0x00000008
+    assert registers(4) == 0x0000000E
+    assert registers(6) == 0x0000000E
 
 
 @cocotb.test()
@@ -292,6 +298,7 @@ async def test_load_store(dut):
     lbu x10, 109(x0) # pc = 0x30, x10 = 0x0000_008F
     lb x11, 109(x0) # pc = 0x34, x11 = 0xFFFF_FF8F
     """
+    registers = partial(get_register_value, dut.u_risc_v.u_register_file)
     init_clock(dut)
     reset_risc_v(dut.u_risc_v)
     data = [
@@ -315,41 +322,41 @@ async def test_load_store(dut):
     await ClockCycles(dut.clk, 2)
 
     await ClockCycles(dut.clk, 2)
-    assert dut.u_risc_v.u_register_file.registers[1].value == 0x1F2E_3000
+    assert registers(1) == 0x1F2E_3000
     await ClockCycles(dut.clk, 2)
-    assert dut.u_risc_v.u_register_file.registers[1].value == 0x1F2E_2D4C
+    assert registers(1) == 0x1F2E_2D4C
 
     await ClockCycles(dut.clk, 3)
     assert get_word_from_memory(dut.u_memory, 0, 100) == 0x1F2E_2D4C
     await ClockCycles(dut.clk, 3)
-    assert dut.u_risc_v.u_register_file.registers[3].value == 0x1F2E_2D4C
+    assert registers(3) == 0x1F2E_2D4C
 
     await ClockCycles(dut.clk, 3)
     assert get_word_from_memory(dut.u_memory, 0, 104) & 0xFFFF == 0x0000_2D4C
     await ClockCycles(dut.clk, 3)
-    assert dut.u_risc_v.u_register_file.registers[4].value == 0x0000_2D4C
+    assert registers(4) == 0x0000_2D4C
 
     await ClockCycles(dut.clk, 3)
     assert get_word_from_memory(dut.u_memory, 0, 108) & 0xFF == 0x0000_004C
     await ClockCycles(dut.clk, 3)
-    assert dut.u_risc_v.u_register_file.registers[5].value == 0x0000_004C
+    assert registers(5) == 0x0000_004C
 
     await ClockCycles(dut.clk, 3)
-    assert dut.u_risc_v.u_register_file.registers[6].value == 0x0000_002D
+    assert registers(6) == 0x0000_002D
 
     await ClockCycles(dut.clk, 2)
-    assert dut.u_risc_v.u_register_file.registers[7].value == 0x0000_008F
+    assert registers(7) == 0x0000_008F
 
     await ClockCycles(dut.clk, 3)
     assert get_word_from_memory(dut.u_memory, 0, 108) >> 8 & 0xFF == 0x0000_008F
     await ClockCycles(dut.clk, 3)
-    assert dut.u_risc_v.u_register_file.registers[8].value == 0x0000_8F4C
+    assert registers(8) == 0x0000_8F4C
     await ClockCycles(dut.clk, 3)
-    assert dut.u_risc_v.u_register_file.registers[9].value == 0xFFFF_8F4C
+    assert registers(9) == 0xFFFF_8F4C
     await ClockCycles(dut.clk, 3)
-    assert dut.u_risc_v.u_register_file.registers[10].value == 0x0000_008F
+    assert registers(10) == 0x0000_008F
     await ClockCycles(dut.clk, 3)
-    assert dut.u_risc_v.u_register_file.registers[11].value == 0xFFFF_FF8F
+    assert registers(11) == 0xFFFF_FF8F
 
 
 @cocotb.test()
@@ -369,6 +376,7 @@ async def test_integer_register_immediate(dut):
     srli x10, x9, 2       # pc = 0x20, x10 = 0x0FC0_0000
     srai x11, x10, 2      # pc = 0x24, x11 = 0x003F_0000
     """
+    registers = partial(get_register_value, dut.u_risc_v.u_register_file)
     init_clock(dut)
     reset_risc_v(dut.u_risc_v)
     data = [
@@ -388,17 +396,17 @@ async def test_integer_register_immediate(dut):
     await ClockCycles(dut.clk, 2)
 
     await ClockCycles(dut.clk, 22)  # 11 instructions, 2 cycles each
-    assert dut.u_risc_v.u_register_file.registers[1].value == 0xFFFFF80F
-    assert dut.u_risc_v.u_register_file.registers[2].value == 0x00000001
-    assert dut.u_risc_v.u_register_file.registers[3].value == 0x00000000
-    assert dut.u_risc_v.u_register_file.registers[4].value == 0x00000001
-    assert dut.u_risc_v.u_register_file.registers[5].value == 0x0000000F
-    assert dut.u_risc_v.u_register_file.registers[6].value == 0xFFFFFFCF
-    assert dut.u_risc_v.u_register_file.registers[7].value == 0x0000003F
-    assert dut.u_risc_v.u_register_file.registers[8].value == 0x00000030
-    assert dut.u_risc_v.u_register_file.registers[9].value == 0x3F000000
-    assert dut.u_risc_v.u_register_file.registers[10].value == 0x0FC00000
-    assert dut.u_risc_v.u_register_file.registers[11].value == 0x03F00000
+    assert registers(1) == 0xFFFFF80F
+    assert registers(2) == 0x00000001
+    assert registers(3) == 0x00000000
+    assert registers(4) == 0x00000001
+    assert registers(5) == 0x0000000F
+    assert registers(6) == 0xFFFFFFCF
+    assert registers(7) == 0x0000003F
+    assert registers(8) == 0x00000030
+    assert registers(9) == 0x3F000000
+    assert registers(10) == 0x0FC00000
+    assert registers(11) == 0x03F00000
 
 
 @cocotb.test()
@@ -419,6 +427,7 @@ async def test_integer_register_register(dut):
     sra x11, x4, x1        # pc = 0x28, x11 = 0xFFFFFFFF
     and x12, x10, x11       # pc = 0x2C, x12 = 0x7FFFFFFF
     """
+    registers = partial(get_register_value, dut.u_risc_v.u_register_file)
     init_clock(dut)
     reset_risc_v(dut.u_risc_v)
     data = [
@@ -439,18 +448,18 @@ async def test_integer_register_register(dut):
     await ClockCycles(dut.clk, 2)
 
     await ClockCycles(dut.clk, 24)  # 12 instructions, 2 cycles each
-    assert dut.u_risc_v.u_register_file.registers[1].value == 0x00000001
-    assert dut.u_risc_v.u_register_file.registers[2].value == 0x00000002
-    assert dut.u_risc_v.u_register_file.registers[3].value == 0x00000001
-    assert dut.u_risc_v.u_register_file.registers[4].value == 0xFFFFFFFF
-    assert dut.u_risc_v.u_register_file.registers[5].value == 0x00000001
-    assert dut.u_risc_v.u_register_file.registers[6].value == 0x00000000
-    assert dut.u_risc_v.u_register_file.registers[7].value == 0x00000003
-    assert dut.u_risc_v.u_register_file.registers[8].value == 0x00000003
-    assert dut.u_risc_v.u_register_file.registers[9].value == 0x00000018
-    assert dut.u_risc_v.u_register_file.registers[10].value == 0x7FFFFFFF
-    assert dut.u_risc_v.u_register_file.registers[11].value == 0xFFFFFFFF
-    assert dut.u_risc_v.u_register_file.registers[12].value == 0x7FFFFFFF
+    assert registers(1) == 0x00000001
+    assert registers(2) == 0x00000002
+    assert registers(3) == 0x00000001
+    assert registers(4) == 0xFFFFFFFF
+    assert registers(5) == 0x00000001
+    assert registers(6) == 0x00000000
+    assert registers(7) == 0x00000003
+    assert registers(8) == 0x00000003
+    assert registers(9) == 0x00000018
+    assert registers(10) == 0x7FFFFFFF
+    assert registers(11) == 0xFFFFFFFF
+    assert registers(12) == 0x7FFFFFFF
 
 
 def test_top():
