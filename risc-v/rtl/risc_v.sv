@@ -54,7 +54,6 @@ module risc_v (
   // Memory-related signals based on instruction
   assign mem_wd   = rs2;  // Write data to memory is always rs2
   assign mem_wa   = rs1 + imm_ext;  // Address to write in memory is always rs1 + immediate
-  assign mem_wen  = is_store;  // Memory write enable only for store
 
   register_file u_register_file (
       .clk(clk),
@@ -115,6 +114,8 @@ module risc_v (
   // No write enable for branch and store
   assign reg_wen = !(is_branch | is_store) & (state != FETCH_INSTR);
   assign mem_funct3 = ((is_load | is_store) & state != WAIT_MEM) ? funct3 : 3'b010;
+  assign mem_wen = is_store & state == EXECUTE;  // Memory write enable only for store
+
   always_comb begin
     if (state == WAIT_MEM) begin
       mem_ra = pc;

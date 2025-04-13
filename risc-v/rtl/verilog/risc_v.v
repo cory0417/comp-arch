@@ -61,7 +61,6 @@ module risc_v (
 	assign rd_addr = instr[11:7];
 	assign mem_wd = rs2;
 	assign mem_wa = rs1 + imm_ext;
-	assign mem_wen = is_store;
 	register_file u_register_file(
 		.clk(clk),
 		.a1(rs1_addr),
@@ -111,6 +110,7 @@ module risc_v (
 	reg [1:0] state;
 	assign reg_wen = !(is_branch | is_store) & (state != 2'd0);
 	assign mem_funct3 = ((is_load | is_store) & (state != 2'd2) ? funct3 : 3'b010);
+	assign mem_wen = is_store & (state == 2'd1);
 	always @(*) begin
 		if (_sv2v_0)
 			;
