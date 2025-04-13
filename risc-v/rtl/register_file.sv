@@ -34,16 +34,4 @@ module register_file (
 
   assign rd1 = rd1_local;
   assign rd2 = rd2_local;
-
-`ifdef COCOTB_SIM
-  integer i;
-  initial begin
-    $dumpfile("register_file_tb.vcd");
-    $dumpvars(0, register_file);
-    for (i = 0; i < 32; i = i + 1) begin
-      $dumpvars(0, registers[i]);
-    end
-  end
-`endif
-
 endmodule

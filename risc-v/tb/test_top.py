@@ -480,6 +480,7 @@ def test_top():
         clean=True,
         verbose=True,
         timescale=("1ns", "1ns"),
+        waves=True,
         # NOTE: program can be passed as a parameter here
         # build_args=[
         #     f'-Ptop.INIT_FILE="{parent_dir}/rv32i_test"'
@@ -490,4 +491,5 @@ def test_top():
         test_module="test_top",
         hdl_toplevel_lang="verilog",
         results_xml=None,
+        waves=True,
     )

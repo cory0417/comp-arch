@@ -22,10 +22,4 @@ module pc_selector (
                    (pc_src == 2'b01) ? pc_jal :
                    (pc_src == 2'b10 && alu_result == {31'b0, 1'b1}) ? pc_branch : pc_4;
 
-`ifdef COCOTB_SIM
-  initial begin
-    $dumpfile("pc_selector_tb.vcd");
-    $dumpvars(0, pc_selector);
-  end
-`endif
 endmodule

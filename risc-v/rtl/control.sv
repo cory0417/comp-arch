@@ -93,10 +93,4 @@ module control (
       default: result_src = 5;  // No write data
     endcase
   end
-`ifdef COCOTB_SIM
-  initial begin
-    $dumpfile("control_tb.vcd");
-    $dumpvars(0, control);
-  end
-`endif
 endmodule

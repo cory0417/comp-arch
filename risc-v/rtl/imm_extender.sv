@@ -27,12 +27,4 @@ module imm_extender (
       default: imm_ext = 32'b0;
     endcase
   end
-
-`ifdef COCOTB_SIM
-  initial begin
-    $dumpfile("imm_extender_tb.vcd");
-    $dumpvars(0, imm_extender);
-  end
-`endif
-
 endmodule

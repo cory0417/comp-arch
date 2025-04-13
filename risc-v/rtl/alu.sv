@@ -40,11 +40,4 @@ module alu (
       end
     endcase
   end
-
-`ifdef COCOTB_SIM
-  initial begin
-    $dumpfile("alu_tb.vcd");
-    $dumpvars(0, alu);
-  end
-`endif
 endmodule

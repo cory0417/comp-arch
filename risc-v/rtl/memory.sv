@@ -355,13 +355,6 @@ module memory #(
       micros_counter <= micros_counter + 1;
     end
   end
-
-`ifdef COCOTB_SIM
-  initial begin
-    $dumpfile("memory_tb.vcd");
-    $dumpvars(0, memory);
-  end
-`endif
 endmodule
 
 module memory_array #(

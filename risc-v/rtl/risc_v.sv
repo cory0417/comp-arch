@@ -155,10 +155,4 @@ module risc_v (
     pc = 32'b0;  // Initialize program counter to -4 to start at 0 when it loads pc+4
     state = WAIT_MEM;  // Start in instruction fetch state
   end
-`ifdef COCOTB_SIM
-  initial begin
-    $dumpfile("risc_v_tb.vcd");
-    $dumpvars(0, risc_v);
-  end
-`endif
 endmodule

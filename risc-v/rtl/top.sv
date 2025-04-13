@@ -37,10 +37,4 @@ module top #(
       .green(RGB_G),
       .blue(RGB_B)
   );
-`ifdef COCOTB_SIM
-  initial begin
-    $dumpfile("top_tb.vcd");
-    $dumpvars(0, top);
-  end
-`endif
 endmodule
