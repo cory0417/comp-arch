@@ -352,6 +352,107 @@ async def test_load_store(dut):
     assert dut.u_risc_v.u_register_file.registers[11].value == 0xFFFF_FF8F
 
 
+@cocotb.test()
+async def test_integer_register_immediate(dut):
+    """
+    Test integer register-immediate instructions (I-type).
+
+    addi x1, x0, 0x80F    # pc = 0x00, x1 = 0xFFFF_F80F = -2033
+    slti x2, x1, -2032    # pc = 0x04, x2 = 0x00000001; x1 < -2032
+    sltiu x3, x1, 10   # pc = 0x08, x3 = 0x00000000; x1 > 10 (unsigned)
+    sltiu x4, x0, 1      # pc = 0x0C, x4 = 0x00000001; x0 < 0x0000_0001 (unsigned) -- only possible when rs1 is 0
+    andi x5, x1, 0x0FF    # pc = 0x10, x5 = 0x0000_000F
+    ori x6, x5, 0xFCF    # pc = 0x14, x6 = 0xFFFF_FFCF
+    xori x7, x6, 0xFF0    # pc = 0x18, x7 = 0x0000_003F
+    xori x8, x6, -1      # pc = 0x1C, x8 = 0x0000_0030
+    slli x9, x7, 24       # pc = 0x1C, x9 = 0x3F00_0000
+    srli x10, x9, 2       # pc = 0x20, x10 = 0x0FC0_0000
+    srai x11, x10, 2      # pc = 0x24, x11 = 0x003F_0000
+    """
+    init_clock(dut)
+    reset_risc_v(dut.u_risc_v)
+    data = [
+        0x80F00093,  # addi x1 x0 -2033
+        0x8100A113,  # slti x2 x1 -2032
+        0x00A0B193,  # sltiu x3 x1 10
+        0x00103213,  # sltiu x4 x0 1
+        0x0FF0F293,  # andi x5 x1 255
+        0xFCF2E313,  # ori x6 x5 -49
+        0xFF034393,  # xori x7 x6 -16
+        0xFFF34413,  # xori x8 x6 -1
+        0x01839493,  # slli x9 x7 24
+        0x0024D513,  # srli x10 x9 2
+        0x40255593,  # srai x11 x10 2
+    ]
+    write_program_to_memory(dut, data)
+    await ClockCycles(dut.clk, 2)
+
+    await ClockCycles(dut.clk, 22)  # 11 instructions, 2 cycles each
+    assert dut.u_risc_v.u_register_file.registers[1].value == 0xFFFFF80F
+    assert dut.u_risc_v.u_register_file.registers[2].value == 0x00000001
+    assert dut.u_risc_v.u_register_file.registers[3].value == 0x00000000
+    assert dut.u_risc_v.u_register_file.registers[4].value == 0x00000001
+    assert dut.u_risc_v.u_register_file.registers[5].value == 0x0000000F
+    assert dut.u_risc_v.u_register_file.registers[6].value == 0xFFFFFFCF
+    assert dut.u_risc_v.u_register_file.registers[7].value == 0x0000003F
+    assert dut.u_risc_v.u_register_file.registers[8].value == 0x00000030
+    assert dut.u_risc_v.u_register_file.registers[9].value == 0x3F000000
+    assert dut.u_risc_v.u_register_file.registers[10].value == 0x0FC00000
+    assert dut.u_risc_v.u_register_file.registers[11].value == 0x03F00000
+
+
+@cocotb.test()
+async def test_integer_register_register(dut):
+    """
+    Test integer register-register instructions (R-type).
+
+    addi x1, x0, 0x001       # pc = 0x00, x1 = 0x00000001
+    add x2, x1, x1         # pc = 0x04, x2 = 0x00000002
+    slt x3, x1, x2       # pc = 0x08, x3 = 0x00000001; x1 < x2
+    sub x4, x1, x2       # pc = 0x0C, x4 = 0xFFFFFFFF; x1 - x2 = -1
+    sltu x5, x1, x4         # pc = 0x10, x5 = 0x00000001; x1 < -1 (unsigned)
+    slt x6, x1, x4       # pc = 0x14, x6 = 0x00000000; x1 > -1
+    xor x7, x1, x2       # pc = 0x18, x7 = 0x00000003
+    or x8, x7, x1         # pc = 0x1C, x8 = 0x00000003
+    sll x9, x8, x7         # pc = 0x20, x9 = 0x00000018
+    srl x10, x4, x1        # pc = 0x24, x10 = 0x7FFFFFFF
+    sra x11, x4, x1        # pc = 0x28, x11 = 0xFFFFFFFF
+    and x12, x10, x11       # pc = 0x2C, x12 = 0x7FFFFFFF
+    """
+    init_clock(dut)
+    reset_risc_v(dut.u_risc_v)
+    data = [
+        0x00100093,  # addi x1 x0 1
+        0x00108133,  # add x2 x1 x1
+        0x0020A1B3,  # slt x3 x1 x2
+        0x40208233,  # sub x4 x1 x2
+        0x0040B2B3,  # sltu x5 x1 x4
+        0x0040A333,  # slt x6 x1 x4
+        0x0020C3B3,  # xor x7 x1 x2
+        0x0013E433,  # or x8 x7 x1
+        0x007414B3,  # sll x9 x8 x7
+        0x00125533,  # srl x10 x4 x1
+        0x401255B3,  # sra x11 x4 x1
+        0x00B57633,  # and x12 x10 x11
+    ]
+    write_program_to_memory(dut, data)
+    await ClockCycles(dut.clk, 2)
+
+    await ClockCycles(dut.clk, 24)  # 12 instructions, 2 cycles each
+    assert dut.u_risc_v.u_register_file.registers[1].value == 0x00000001
+    assert dut.u_risc_v.u_register_file.registers[2].value == 0x00000002
+    assert dut.u_risc_v.u_register_file.registers[3].value == 0x00000001
+    assert dut.u_risc_v.u_register_file.registers[4].value == 0xFFFFFFFF
+    assert dut.u_risc_v.u_register_file.registers[5].value == 0x00000001
+    assert dut.u_risc_v.u_register_file.registers[6].value == 0x00000000
+    assert dut.u_risc_v.u_register_file.registers[7].value == 0x00000003
+    assert dut.u_risc_v.u_register_file.registers[8].value == 0x00000003
+    assert dut.u_risc_v.u_register_file.registers[9].value == 0x00000018
+    assert dut.u_risc_v.u_register_file.registers[10].value == 0x7FFFFFFF
+    assert dut.u_risc_v.u_register_file.registers[11].value == 0xFFFFFFFF
+    assert dut.u_risc_v.u_register_file.registers[12].value == 0x7FFFFFFF
+
+
 def test_top():
     runner = get_runner("icarus")
     runner.build(
