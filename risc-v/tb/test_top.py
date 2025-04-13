@@ -171,6 +171,187 @@ async def test_rgb_cycling(dut):
     assert dut.u_risc_v.pc.value == pc_before_jump - 52
 
 
+@cocotb.test()
+async def test_unconditional_jumps(dut):
+    """
+    Test unconditional jumps -- jal and jalr
+
+    ori x1, x0, 10      # pc = 0x00, x1 = 0x0000000A
+    jal x2, 0xC         # pc = 0x04, x2 = 0x00000008
+    addi x3, x1, 5      # pc = 0x08, x3 = 0x0000000F
+    jal x0, 0x8         # pc = 0x0C, x0 = 0x00000000
+    jalr x0, 0(x2)      # pc = 0x10, x0 = 0x00000000
+    sub x4, x3, x1      # pc = 0x14, x4 = 0x00000005
+
+    Order of execution:
+    1. ori x1, x0, 10
+    2. jal x2, 0xC
+    3. jalr x0, 0(x2)
+    4. addi x3, x1, 5
+    5. jal x0, 0x8
+    6. sub x4, x3, x1
+    """
+    init_clock(dut)
+    reset_risc_v(dut.u_risc_v)
+    # Writing the instructions to memory
+    data = [
+        0x00A06093,  # ori x1 x0 10
+        0x00C0016F,  # jal x2 12
+        0x00508193,  # addi x3 x1 5
+        0x0080006F,  # jal x0 8
+        0x00010267,  # jalr x4 x2 0
+        0x40118233,  # sub x4 x3 x1
+    ]
+    write_program_to_memory(dut, data)
+    await ClockCycles(dut.clk, 2)  # Reprogramming complete
+
+    await ClockCycles(dut.clk, 12)
+    assert dut.u_risc_v.u_register_file.registers[4].value == 0x00000005
+    assert dut.u_risc_v.u_register_file.registers[3].value == 0x0000000F
+    assert dut.u_risc_v.u_register_file.registers[2].value == 0x00000008
+    assert dut.u_risc_v.u_register_file.registers[1].value == 0x0000000A
+
+
+@cocotb.test()
+async def test_conditional_jumps(dut):
+    """
+    Test conditional jumps -- beq, bne, blt, bge
+
+    addi x1, x0, 0xE    # pc = 0x00, x1 = 0x0000000E
+    andi x2, x1, 0x7    # pc = 0x04, x2 = 0x00000006
+    beq x1, x2, 0x8     # pc = 0x08; x1 != x2, so branch not taken
+    xor x3, x1, x2      # pc = 0x0C, x3 = 0x00000008
+    add x4, x2, x3      # pc = 0x10, x4 = 0x0000000E
+    bne x1, x4, -8      # pc = 0x14; x1 == x4, so branch not taken
+    blt x2, x1, 0x8     # pc = 0x18; x2 < x1, so branch taken
+    sub x2, x1, x4      # pc = 0x1C, x2 = 0x00000000
+    addi x2, x2, 0x9    # pc = 0x1C, x2 = 0x0000000F; second time -- x2 = 0x00000009
+    bge x2, x1, -8      # pc = 0x20; x2 >= x1, so branch taken; x2 < x1, so branch not taken second time
+    addi x6, x2, 5      # pc = 0x24, x6 = 0x0000000E
+
+    Order of execution:
+    1. addi x1, x0, 0xE
+    2. andi x2, x1, 0x7
+    3. beq x1, x2, 0x8
+    4. xor x3, x1, x2
+    5. add x4, x2, x3
+    6. bne x1, x4, -8
+    7. blt x2, x1, 0x8
+    8. addi x2, x2, 0x9
+    9. bge x2, x1, -8
+    10. sub x2, x1, x4
+    11. addi x6, x2, 5
+    12. bge x2, x1, -8
+    13. addi x6, x2, 5
+    """
+    init_clock(dut)
+    reset_risc_v(dut.u_risc_v)
+    # Writing the instructions to memory
+    data = [
+        0x00E00093,  # addi x1 x0 14
+        0x0070F113,  # andi x2 x1 7
+        0x00208463,  # beq x1 x2 8
+        0x0020C1B3,  # xor x3 x1 x2
+        0x00310233,  # add x4 x2 x3
+        0xFE409CE3,  # bne x1 x4 -8
+        0x00114463,  # blt x2 x1 8
+        0x40408133,  # sub x2 x1 x4
+        0x00910113,  # addi x2 x2 9
+        0xFE115CE3,  # bge x2 x1 -8
+        0x00510313,  # addi x6 x2 5
+    ]
+    write_program_to_memory(dut, data)
+    await ClockCycles(dut.clk, 2)
+
+    await ClockCycles(dut.clk, 26)
+    assert dut.u_risc_v.u_register_file.registers[1].value == 0x0000000E
+    assert dut.u_risc_v.u_register_file.registers[2].value == 0x00000009
+    assert dut.u_risc_v.u_register_file.registers[3].value == 0x00000008
+    assert dut.u_risc_v.u_register_file.registers[4].value == 0x0000000E
+    assert dut.u_risc_v.u_register_file.registers[6].value == 0x0000000E
+
+
+@cocotb.test()
+async def test_load_store(dut):
+    """
+    Test load/store instructions.
+
+    lui x1, 0x1F2E3   # pc = 0x00, x1 = 0x1F2E_3000
+    addi x1, x1, 0xD4C  # pc = 0x04, x1 = 0x1F2E_2D4C
+    sw x1, 100(x0)  # pc = 0x04, mem[0x00000064] = 0x1F2E_2D4C
+    lw x3, 100(x0) # pc = 0x08, x2 = 0x1F2E_2D4C
+    sh x1, 104(x0) # pc = 0x0C, mem[0x00000068] = 0x0000_2D4C
+    lh x4, 104(x0) # pc = 0x10, x4 = 0x0000_2D4C
+    sb x1, 108(x0) # pc = 0x14, mem[0x0000006C] = 0x0000_004C
+    lb x5, 108(x0) # pc = 0x18, x5 = 0x0000_004C
+    lb x6, 105(x0) # pc = 0x1C, x6 = 0x0000_002D
+    addi x7, x0, 0x08F  # pc = 0x20, x7 = 0x0000_008F
+    sb x1, 109(x0) # pc = 0x24, mem[0x0000006C] = 0x0000_8F4C
+    lhu x8, 108(x0) # pc = 0x28, x8 = 0x0000_8F4C
+    lh x9, 108(x0) # pc = 0x2C, x9 = 0xFFFF_8F4C
+    lbu x10, 109(x0) # pc = 0x30, x10 = 0x0000_008F
+    lb x11, 109(x0) # pc = 0x34, x11 = 0xFFFF_FF8F
+    """
+    init_clock(dut)
+    reset_risc_v(dut.u_risc_v)
+    data = [
+        0x1F2E30B7,  # lui x1 0x1f2e3
+        0xD4C08093,  # addi x1 x1 -692
+        0x06102223,  # sw x1 100 x0
+        0x06402183,  # lw x3 100 x0
+        0x06101423,  # sh x1 104 x0
+        0x06801203,  # lh x4 104 x0
+        0x06100623,  # sb x1 108 x0
+        0x06C00283,  # lb x5 108 x0
+        0x06900303,  # lb x6 105 x0
+        0x08F00393,  # addi x7 x0 143
+        0x067006A3,  # sb x7 109 x0
+        0x06C05403,  # lhu x8 108 x0
+        0x06C01483,  # lh x9 108 x0
+        0x06D04503,  # lbu x10 109 x0
+        0x06D00583,  # lb x11 109 x0
+    ]
+    write_program_to_memory(dut, data)
+    await ClockCycles(dut.clk, 2)
+
+    await ClockCycles(dut.clk, 2)
+    assert dut.u_risc_v.u_register_file.registers[1].value == 0x1F2E_3000
+    await ClockCycles(dut.clk, 2)
+    assert dut.u_risc_v.u_register_file.registers[1].value == 0x1F2E_2D4C
+
+    await ClockCycles(dut.clk, 3)
+    assert get_word_from_memory(dut.u_memory, 0, 100) == 0x1F2E_2D4C
+    await ClockCycles(dut.clk, 3)
+    assert dut.u_risc_v.u_register_file.registers[3].value == 0x1F2E_2D4C
+
+    await ClockCycles(dut.clk, 3)
+    assert get_word_from_memory(dut.u_memory, 0, 104) & 0xFFFF == 0x0000_2D4C
+    await ClockCycles(dut.clk, 3)
+    assert dut.u_risc_v.u_register_file.registers[4].value == 0x0000_2D4C
+
+    await ClockCycles(dut.clk, 3)
+    assert get_word_from_memory(dut.u_memory, 0, 108) & 0xFF == 0x0000_004C
+    await ClockCycles(dut.clk, 3)
+    assert dut.u_risc_v.u_register_file.registers[5].value == 0x0000_004C
+
+    await ClockCycles(dut.clk, 3)
+    assert dut.u_risc_v.u_register_file.registers[6].value == 0x0000_002D
+
+    await ClockCycles(dut.clk, 2)
+    assert dut.u_risc_v.u_register_file.registers[7].value == 0x0000_008F
+
+    await ClockCycles(dut.clk, 3)
+    assert get_word_from_memory(dut.u_memory, 0, 108) >> 8 & 0xFF == 0x0000_008F
+    await ClockCycles(dut.clk, 3)
+    assert dut.u_risc_v.u_register_file.registers[8].value == 0x0000_8F4C
+    await ClockCycles(dut.clk, 3)
+    assert dut.u_risc_v.u_register_file.registers[9].value == 0xFFFF_8F4C
+    await ClockCycles(dut.clk, 3)
+    assert dut.u_risc_v.u_register_file.registers[10].value == 0x0000_008F
+    await ClockCycles(dut.clk, 3)
+    assert dut.u_risc_v.u_register_file.registers[11].value == 0xFFFF_FF8F
+
+
 def test_top():
     runner = get_runner("icarus")
     runner.build(
