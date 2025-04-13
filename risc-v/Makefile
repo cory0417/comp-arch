@@ -1,18 +1,12 @@
-filename      ?= top
-sources       := ./rtl/types.sv \
-                 ./rtl/control.sv \
-                 ./rtl/pc_selector.sv \
-                 ./rtl/alu.sv \
-                 ./rtl/register_file.sv \
-                 ./rtl/imm_extender.sv \
-                 ./rtl/memory.sv \
-                 ./rtl/risc_v.sv \
-                 ./rtl/$(filename).sv
-pcf_file      := ../iceBlinkPico.pcf
+filename    ?= top
+sv_sources	:= ./rtl/*.sv
+v_sources	:= ./rtl/verilog/*.v
+pcf_file    := ../iceBlinkPico.pcf
 
 build:
-	yosys -p "synth_ice40 -top $(filename) -json $(filename).json" $(sources)
-	nextpnr-ice40 --up5k --package sg48 --json $(filename).json --pcf $(pcf_file) --asc $(filename).asc
+	../sv2v/sv2v --write=rtl/verilog $(sv_sources) --top=$(filename)
+	yosys -p "synth_ice40 -top $(filename) -json $(filename).json" $(v_sources)
+	nextpnr-ice40 --up5k --package sg48 --json $(filename).json --pcf $(pcf_file) --asc $(filename).asc --freq 12
 	icepack $(filename).asc $(filename).bin
 
 prog:
