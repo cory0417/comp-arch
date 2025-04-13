@@ -21,17 +21,12 @@ module register_file (
     end
   end
 
-  always_comb begin
-    rd1_local = (a1 != 0) ? registers[a1] : 32'b0;
-    rd2_local = (a2 != 0) ? registers[a2] : 32'b0;
-  end
+  assign rd1 = (a1 != 0) ? registers[a1] : 32'b0;
+  assign rd2 = (a2 != 0) ? registers[a2] : 32'b0;
 
   always_ff @(posedge clk) begin
     if (wen && a3 != 5'd0) begin
       registers[a3] <= wd;
     end
   end
-
-  assign rd1 = rd1_local;
-  assign rd2 = rd2_local;
 endmodule
