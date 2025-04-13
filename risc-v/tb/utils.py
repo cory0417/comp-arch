@@ -53,7 +53,7 @@ def reset_risc_v(u_risc_v):
     reset_registers(u_risc_v.u_register_file)
 
 
-def get_word_from_memory(u_memory, base_address, offset):
+def get_word_from_memory(u_memory, base_address, offset_bytes):
     """Get memory data at given address."""
     memory_arrays = [
         u_memory.mem0,
@@ -61,8 +61,7 @@ def get_word_from_memory(u_memory, base_address, offset):
         u_memory.mem2,
         u_memory.mem3,
     ]
-    address = (base_address + offset) & 0xFFFFFFFF
-
+    address = int((base_address + offset_bytes)) & 0xFFFFFFFF
     if address >= 2048:
         if (
             address >> 13
@@ -85,6 +84,6 @@ def get_word_from_memory(u_memory, base_address, offset):
             return 0
     else:
         return sum(
-            mem_array.memory[address].value << (8 * i)
+            mem_array.memory[address // 4].value << (8 * i)
             for i, mem_array in enumerate(memory_arrays)
         )
