@@ -130,7 +130,7 @@ module risc_v (
 				instr <= mem_rd;
 			end
 			2'd1: begin
-				if (op != types_OP_JAL)
+				if (!is_jal)
 					pc <= pc_next;
 				if (is_load | is_store)
 					state <= 2'd2;

@@ -137,7 +137,7 @@ module risc_v (
         instr <= mem_rd;
       end
       EXECUTE: begin
-        if (op != OP_JAL) pc <= pc_next;
+        if (!is_jal) pc <= pc_next;
         // Two cases for next state
         if (is_load | is_store) begin
           state <= WAIT_MEM;  // Wait for memory operation
