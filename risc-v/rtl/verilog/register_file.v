@@ -24,9 +24,9 @@ module register_file (
 		for (i = 0; i < 32; i = i + 1)
 			registers[i] = 32'b00000000000000000000000000000000;
 	end
+	assign rd1 = (a1 != 0 ? registers[a1] : 32'b00000000000000000000000000000000);
+	assign rd2 = (a2 != 0 ? registers[a2] : 32'b00000000000000000000000000000000);
 	always @(posedge clk)
 		if (wen && (a3 != 5'd0))
 			registers[a3] <= wd;
-	assign rd1 = (a1 != 0 ? registers[a1] : 32'b00000000000000000000000000000000);
-	assign rd2 = (a2 != 0 ? registers[a2] : 32'b00000000000000000000000000000000);
 endmodule

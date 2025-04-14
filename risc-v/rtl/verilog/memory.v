@@ -46,7 +46,7 @@ module memory (
 	wire sign_bit1;
 	wire sign_bit2;
 	wire sign_bit3;
-	reg [31:0] read_val;
+	wire [31:0] read_val;
 	wire write_address0;
 	wire write_address1;
 	wire write_word;
@@ -104,7 +104,8 @@ module memory (
 	wire is_mem_read;
 	assign is_mem_read = read_address[31:13] == 19'd0;
 	initial mem_read_enable = 1'b1;
-	always @(posedge clk) read_val <= (is_mem_read ? {mem_read_data3, mem_read_data2, mem_read_data1, mem_read_data0} : read_value);
+	always @(posedge clk) mem_read_enable <= is_mem_read;
+	assign read_val = (mem_read_enable ? {mem_read_data3, mem_read_data2, mem_read_data1, mem_read_data0} : read_value);
 	always @(posedge clk) begin
 		read_address1 <= read_address[1];
 		read_address0 <= read_address[0];
