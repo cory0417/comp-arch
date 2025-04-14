@@ -17,8 +17,6 @@ module register_file (
 	output wire [31:0] rd1;
 	output wire [31:0] rd2;
 	reg [31:0] registers [0:31];
-	wire [31:0] rd1_local;
-	wire [31:0] rd2_local;
 	initial begin : sv2v_autoblock_1
 		reg signed [31:0] i;
 		for (i = 0; i < 32; i = i + 1)

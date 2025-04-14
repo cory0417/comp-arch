@@ -12,8 +12,6 @@ module register_file (
 );
 
   logic [31:0] registers[32];
-  logic [31:0] rd1_local, rd2_local;
-
   initial begin
     // Initialize registers to zero
     for (int i = 0; i < 32; i++) begin
