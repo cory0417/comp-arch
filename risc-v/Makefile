@@ -14,6 +14,8 @@ SRC_NAME := $(basename $(SRC))
 SRC_PATH := ./prog/$(SRC_NAME)
 BUILD_DIR := ./prog/build
 LINKER := ./prog/link.ld
+STARTUP := ./prog/startup.S
+GCC_FLAGS := -march=rv32i -mabi=ilp32 -Os -nostdlib -T $(LINKER) -Wl,--gc-sections,--print-gc-sections -Wall -Wextra
 
 build:
 	../sv2v/sv2v --write=rtl/verilog $(SV2V_DEFINE) $(sv_sources) --top=$(filename)
@@ -32,17 +34,10 @@ clean:
 
 compile:
 	mkdir -p $(BUILD_DIR)
-	riscv-none-elf-gcc \
-		-march=rv32i -mabi=ilp32 \
-		-Os -g -fno-jump-tables \
-		-nostdlib -nostartfiles \
-    	-T $(LINKER) \
-    	-o $(BUILD_DIR)/$(SRC_NAME).elf \
-    	$(SRC_PATH).c ./prog/startup.S \
-    	-Wl,--gc-sections
-
+	riscv-none-elf-gcc -o $(BUILD_DIR)/$(SRC_NAME).elf $(SRC_PATH).c $(STARTUP) $(GCC_FLAGS)
 	riscv-none-elf-objcopy -O binary $(BUILD_DIR)/$(SRC_NAME).elf $(BUILD_DIR)/$(SRC_NAME).bin
-	riscv-none-elf-gcc -march=rv32i -mabi=ilp32 -nostartfiles -O0 -S $(SRC_PATH).c -o $(BUILD_DIR)/$(SRC_NAME).s
-	od -An -t x4 -v $(BUILD_DIR)/$(SRC_NAME).bin | sed -E 's/^[[:space:]]+//;s/[[:space:]]+/\n/g' > $(BUILD_DIR)/$(SRC_NAME).txt
+	od -An -H -v $(BUILD_DIR)/$(SRC_NAME).bin | sed -E 's/[[:space:]]+/\n/g' | sed -E '/^[[:space:]]*$$/d' > $(BUILD_DIR)/$(SRC_NAME).txt
+# For debugging, generate assembly code without linking
+	riscv-none-elf-gcc -S $(GCC_FLAGS) $(SRC_PATH).c -o $(BUILD_DIR)/$(SRC_NAME).s
 
 .PHONY: build prog clean compile
