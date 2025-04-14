@@ -107,7 +107,6 @@ module memory #(
       .write_enable (mem_write_enable0),
       .write_address(write_address[12:2]),
       .write_data   (mem_write_data0),
-      .read_enable  (mem_read_enable),
       .read_address (read_address[12:2]),
       .read_data    (mem_read_data0)
   );
@@ -119,7 +118,6 @@ module memory #(
       .write_enable (mem_write_enable1),
       .write_address(write_address[12:2]),
       .write_data   (mem_write_data1),
-      .read_enable  (mem_read_enable),
       .read_address (read_address[12:2]),
       .read_data    (mem_read_data1)
   );
@@ -131,7 +129,6 @@ module memory #(
       .write_enable (mem_write_enable2),
       .write_address(write_address[12:2]),
       .write_data   (mem_write_data2),
-      .read_enable  (mem_read_enable),
       .read_address (read_address[12:2]),
       .read_data    (mem_read_data2)
   );
@@ -143,19 +140,17 @@ module memory #(
       .write_enable (mem_write_enable3),
       .write_address(write_address[12:2]),
       .write_data   (mem_write_data3),
-      .read_enable  (mem_read_enable),
       .read_address (read_address[12:2]),
       .read_data    (mem_read_data3)
   );
 
   // Handle memory reads
-  // assign mem_read_enable = (read_address[31:13] == 19'd0);
-  logic mem_read_enable_comb;
-  assign mem_read_enable_comb = (read_address[31:13] == 19'd0);
+  logic is_mem_read;
+  assign is_mem_read = (read_address[31:13] == 19'd0);
   initial mem_read_enable = 1'b1;
 
   always_ff @(posedge clk) begin
-    mem_read_enable <= mem_read_enable_comb;
+    mem_read_enable <= is_mem_read;
   end
   assign read_val = mem_read_enable ? { mem_read_data3, mem_read_data2, mem_read_data1, mem_read_data0 } : read_value;
 
@@ -364,7 +359,6 @@ module memory_array #(
     input  logic        write_enable,
     input  logic [10:0] write_address,
     input  logic [ 7:0] write_data,
-    input  logic        read_enable,
     input  logic [10:0] read_address,
     output logic [ 7:0] read_data
 );
@@ -385,9 +379,7 @@ module memory_array #(
   end
 
   always_ff @(posedge clk) begin
-    if (read_enable) begin
-      read_data <= memory[read_address];
-    end
+    read_data <= memory[read_address];
   end
 
   always_ff @(posedge clk) begin

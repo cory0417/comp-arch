@@ -46,7 +46,7 @@ module memory (
 	wire sign_bit1;
 	wire sign_bit2;
 	wire sign_bit3;
-	wire [31:0] read_val;
+	reg [31:0] read_val;
 	wire write_address0;
 	wire write_address1;
 	wire write_word;
@@ -74,7 +74,6 @@ module memory (
 		.write_enable(mem_write_enable0),
 		.write_address(write_address[12:2]),
 		.write_data(mem_write_data0),
-		.read_enable(mem_read_enable),
 		.read_address(read_address[12:2]),
 		.read_data(mem_read_data0)
 	);
@@ -83,7 +82,6 @@ module memory (
 		.write_enable(mem_write_enable1),
 		.write_address(write_address[12:2]),
 		.write_data(mem_write_data1),
-		.read_enable(mem_read_enable),
 		.read_address(read_address[12:2]),
 		.read_data(mem_read_data1)
 	);
@@ -92,7 +90,6 @@ module memory (
 		.write_enable(mem_write_enable2),
 		.write_address(write_address[12:2]),
 		.write_data(mem_write_data2),
-		.read_enable(mem_read_enable),
 		.read_address(read_address[12:2]),
 		.read_data(mem_read_data2)
 	);
@@ -101,15 +98,13 @@ module memory (
 		.write_enable(mem_write_enable3),
 		.write_address(write_address[12:2]),
 		.write_data(mem_write_data3),
-		.read_enable(mem_read_enable),
 		.read_address(read_address[12:2]),
 		.read_data(mem_read_data3)
 	);
-	wire mem_read_enable_comb;
-	assign mem_read_enable_comb = read_address[31:13] == 19'd0;
+	wire is_mem_read;
+	assign is_mem_read = read_address[31:13] == 19'd0;
 	initial mem_read_enable = 1'b1;
-	always @(posedge clk) mem_read_enable <= mem_read_enable_comb;
-	assign read_val = (mem_read_enable ? {mem_read_data3, mem_read_data2, mem_read_data1, mem_read_data0} : read_value);
+	always @(posedge clk) read_val <= (is_mem_read ? {mem_read_data3, mem_read_data2, mem_read_data1, mem_read_data0} : read_value);
 	always @(posedge clk) begin
 		read_address1 <= read_address[1];
 		read_address0 <= read_address[0];
