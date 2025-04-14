@@ -1,3 +1,5 @@
+from pathlib import Path
+
 import cocotb
 from cocotb.triggers import Timer, RisingEdge
 from cocotb.runner import get_runner
@@ -49,27 +51,31 @@ async def test_addi_add(dut):
 
 
 def test_risc_v():
+    sources_dir = Path(__file__).parent.parent / "rtl"
+
     runner = get_runner("icarus")
     runner.build(
         verilog_sources=[
-            "../rtl/types.sv",
-            "../rtl/control.sv",
-            "../rtl/pc_selector.sv",
-            "../rtl/alu.sv",
-            "../rtl/register_file.sv",
-            "../rtl/imm_extender.sv",
-            "../rtl/risc_v.sv",
+            sources_dir / "types.sv",
+            sources_dir / "control.sv",
+            sources_dir / "pc_selector.sv",
+            sources_dir / "alu.sv",
+            sources_dir / "register_file.sv",
+            sources_dir / "imm_extender.sv",
+            sources_dir / "risc_v.sv",
         ],
         hdl_toplevel="risc_v",
-        build_dir="sim_build/risc_v/",
+        build_dir=Path(__file__).parent / "sim_build/risc_v/",
         always=True,
         clean=True,
         verbose=True,
         timescale=("1ns", "1ns"),
+        waves=True,
     )
     runner.test(
         hdl_toplevel="risc_v",
         test_module="test_risc_v",
         hdl_toplevel_lang="verilog",
         results_xml=None,
+        waves=True,
     )

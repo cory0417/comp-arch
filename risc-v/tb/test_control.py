@@ -1,4 +1,5 @@
 import enum
+from pathlib import Path
 
 import cocotb
 from cocotb.triggers import Timer
@@ -150,18 +151,22 @@ async def test_alu_operand_src(dut):
 
 def test_control():
     runner = get_runner("icarus")
+    sources_dir = Path(__file__).parent.parent / "rtl"
+
     runner.build(
-        verilog_sources=["../rtl/types.sv", "../rtl/control.sv"],
+        verilog_sources=[sources_dir / "types.sv", sources_dir / "control.sv"],
         hdl_toplevel="control",
-        build_dir="sim_build/control/",
+        build_dir=Path(__file__).parent / "sim_build/control/",
         always=True,
         clean=True,
         verbose=True,
         timescale=("1ns", "1ns"),
+        waves=True,
     )
     runner.test(
         hdl_toplevel="control",
         test_module="test_control",
         hdl_toplevel_lang="verilog",
         results_xml=None,
+        waves=True,
     )

@@ -1,4 +1,5 @@
 import enum
+from pathlib import Path
 
 import cocotb
 from cocotb.triggers import Timer
@@ -170,18 +171,21 @@ async def test_bgeu(dut):
 
 def test_alu():
     runner = get_runner("icarus")
+    sources_dir = Path(__file__).parent.parent / "rtl"
     runner.build(
-        verilog_sources=["../rtl/types.sv", "../rtl/alu.sv"],
+        verilog_sources=[sources_dir / "types.sv", sources_dir / "alu.sv"],
         hdl_toplevel="alu",
-        build_dir="sim_build/alu/",
+        build_dir=Path(__file__).parent / "sim_build/alu/",
         always=True,
         clean=True,
         verbose=True,
         timescale=("1ns", "1ns"),
+        waves=True,
     )
     runner.test(
         hdl_toplevel="alu",
         test_module="test_alu",
         hdl_toplevel_lang="verilog",
         results_xml=None,
+        waves=True,
     )

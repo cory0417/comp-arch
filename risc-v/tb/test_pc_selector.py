@@ -1,3 +1,5 @@
+from pathlib import Path
+
 import cocotb
 from cocotb.triggers import Timer
 from cocotb.runner import get_runner
@@ -60,18 +62,22 @@ async def test_pc_plus_4(dut):
 
 def test_pc_selector():
     runner = get_runner("icarus")
+    sources_dir = Path(__file__).parent.parent / "rtl"
+
     runner.build(
-        verilog_sources=["../rtl/pc_selector.sv"],
+        verilog_sources=[sources_dir / "pc_selector.sv"],
         hdl_toplevel="pc_selector",
-        build_dir="sim_build/pc_selector/",
+        build_dir=Path(__file__).parent / "sim_build/pc_selector/",
         always=True,
         clean=True,
         verbose=True,
         timescale=("1ns", "1ns"),
+        waves=True,
     )
     runner.test(
         hdl_toplevel="pc_selector",
         test_module="test_pc_selector",
         hdl_toplevel_lang="verilog",
         results_xml=None,
+        waves=True,
     )

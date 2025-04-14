@@ -1,3 +1,5 @@
+from pathlib import Path
+
 import cocotb
 from cocotb.triggers import Timer, RisingEdge
 from cocotb.runner import get_runner
@@ -73,17 +75,20 @@ async def register_write_to_zero(dut):
 
 def test_register_file():
     runner = get_runner("icarus")
+    sources_dir = Path(__file__).parent.parent / "rtl"
     runner.build(
-        verilog_sources=["../rtl/register_file.sv"],
+        verilog_sources=[sources_dir / "register_file.sv"],
         hdl_toplevel="register_file",
-        build_dir="sim_build/register_file/",
+        build_dir=Path(__file__).parent / "sim_build/register_file/",
         always=True,
         clean=True,
         verbose=True,
+        waves=True,
     )
     runner.test(
         hdl_toplevel="register_file",
         test_module="test_register_file",
         hdl_toplevel_lang="verilog",
         results_xml=None,
+        waves=True,
     )

@@ -1,3 +1,5 @@
+from pathlib import Path
+
 import cocotb
 from cocotb.triggers import Timer
 from cocotb.runner import get_runner
@@ -45,18 +47,25 @@ async def test_u_imm(dut):
 
 def test_imm_extender():
     runner = get_runner("icarus")
+    sources_dir = Path(__file__).parent.parent / "rtl"
+
     runner.build(
-        verilog_sources=["../rtl/types.sv", "../rtl/imm_extender.sv"],
+        verilog_sources=[
+            sources_dir / "types.sv",
+            sources_dir / "imm_extender.sv",
+        ],
         hdl_toplevel="imm_extender",
-        build_dir="sim_build/imm_extender/",
+        build_dir=Path(__file__).parent / "sim_build/imm_extender/",
         always=True,
         clean=True,
         verbose=True,
         timescale=("1ns", "1ns"),
+        waves=True,
     )
     runner.test(
         hdl_toplevel="imm_extender",
         test_module="test_imm_extender",
         hdl_toplevel_lang="verilog",
         results_xml=None,
+        waves=True,
     )

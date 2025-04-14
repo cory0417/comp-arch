@@ -1,4 +1,4 @@
-import pathlib
+from pathlib import Path
 
 import cocotb
 from cocotb.triggers import ClockCycles, Timer
@@ -13,7 +13,7 @@ from utils import (
 )
 from functools import partial
 
-parent_dir = pathlib.Path(__file__).parent
+parent_dir = Path(__file__).parent
 
 
 @cocotb.test()
@@ -40,7 +40,7 @@ async def test_r_i_u_s_instructions(dut):
 
     data = load_hex_from_txt(parent_dir / "../prog/rv32i_test.txt")
     # Writing the instructions to memory
-    write_program_to_memory(dut, data)
+    write_program_to_memory(dut.u_memory, data)
     await ClockCycles(dut.clk, 2)
 
     await ClockCycles(
@@ -105,7 +105,7 @@ async def test_rgb_cycling(dut):
     reset_risc_v(dut.u_risc_v)
     # Writing the instructions to memory
     data = load_hex_from_txt(parent_dir / "../prog/rgb_cycle.txt")
-    write_program_to_memory(dut, data)
+    write_program_to_memory(dut.u_memory, data)
     await ClockCycles(dut.clk, 2)  # Reprogramming complete
 
     # lui x1, 0xFF000
@@ -224,7 +224,7 @@ async def test_unconditional_jumps(dut):
         0x00010267,  # jalr x4 x2 0
         0x40118233,  # sub x4 x3 x1
     ]
-    write_program_to_memory(dut, data)
+    write_program_to_memory(dut.u_memory, data)
     await ClockCycles(dut.clk, 2)  # Reprogramming complete
 
     await ClockCycles(dut.clk, 12)
@@ -283,7 +283,7 @@ async def test_conditional_jumps(dut):
         0xFE115CE3,  # bge x2 x1 -8
         0x00510313,  # addi x6 x2 5
     ]
-    write_program_to_memory(dut, data)
+    write_program_to_memory(dut.u_memory, data)
     await ClockCycles(dut.clk, 2)
 
     await ClockCycles(dut.clk, 26)
@@ -335,7 +335,7 @@ async def test_load_store(dut):
         0x06D04503,  # lbu x10 109 x0
         0x06D00583,  # lb x11 109 x0
     ]
-    write_program_to_memory(dut, data)
+    write_program_to_memory(dut.u_memory, data)
     await ClockCycles(dut.clk, 2)
 
     await ClockCycles(dut.clk, 2)
@@ -409,7 +409,7 @@ async def test_integer_register_immediate(dut):
         0x0024D513,  # srli x10 x9 2
         0x40255593,  # srai x11 x10 2
     ]
-    write_program_to_memory(dut, data)
+    write_program_to_memory(dut.u_memory, data)
     await ClockCycles(dut.clk, 2)
 
     await ClockCycles(dut.clk, 22)  # 11 instructions, 2 cycles each
@@ -461,7 +461,7 @@ async def test_integer_register_register(dut):
         0x401255B3,  # sra x11 x4 x1
         0x00B57633,  # and x12 x10 x11
     ]
-    write_program_to_memory(dut, data)
+    write_program_to_memory(dut.u_memory, data)
     await ClockCycles(dut.clk, 2)
 
     await ClockCycles(dut.clk, 24)  # 12 instructions, 2 cycles each
@@ -481,20 +481,21 @@ async def test_integer_register_register(dut):
 
 def test_top():
     runner = get_runner("icarus")
+    sources_dir = Path(__file__).parent.parent / "rtl"
     runner.build(
         verilog_sources=[
-            "../rtl/types.sv",
-            "../rtl/control.sv",
-            "../rtl/pc_selector.sv",
-            "../rtl/alu.sv",
-            "../rtl/register_file.sv",
-            "../rtl/imm_extender.sv",
-            "../rtl/risc_v.sv",
-            "../rtl/memory.sv",
-            "../rtl/top.sv",
+            sources_dir / "types.sv",
+            sources_dir / "control.sv",
+            sources_dir / "pc_selector.sv",
+            sources_dir / "alu.sv",
+            sources_dir / "register_file.sv",
+            sources_dir / "imm_extender.sv",
+            sources_dir / "risc_v.sv",
+            sources_dir / "memory.sv",
+            sources_dir / "top.sv",
         ],
         hdl_toplevel="top",
-        build_dir="sim_build/top/",
+        build_dir=parent_dir / "sim_build/top/",
         always=True,
         clean=True,
         verbose=True,
