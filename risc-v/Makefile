@@ -1,5 +1,5 @@
 filename    ?= top
-init_file 	?= $(PWD)/tb/prog
+init_file 	?= $(PWD)/prog/prog
 sv_sources	:= ./rtl/*.sv
 v_sources	:= ./rtl/verilog/*.v
 pcf_file    := ../iceBlinkPico.pcf
@@ -11,6 +11,7 @@ endif
 
 build:
 	../sv2v/sv2v --write=rtl/verilog $(SV2V_DEFINE) $(sv_sources) --top=$(filename)
+	python prog/split_memhfile.py $(init_file).txt
 	sed -i '' "s|@INIT_FILE@|$(init_file)|g" "rtl/verilog/$(filename).v"
 	yosys -p "synth_ice40 -top $(filename) -json $(filename).json" $(v_sources)
 	nextpnr-ice40 --up5k --package sg48 --json $(filename).json --pcf $(pcf_file) --asc $(filename).asc --freq 12
@@ -20,6 +21,6 @@ prog:
 	dfu-util --device 1d50:6146 --alt 0 -D $(filename).bin -R
 
 clean:
-	rm -f $(filename).asc $(filename).json $(filename).bin
+	rm -f $(filename).asc $(filename).json $(filename).bin prog/*[0-3].txt
 
 .PHONY: build prog clean

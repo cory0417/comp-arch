@@ -38,7 +38,7 @@ async def test_r_i_u_s_instructions(dut):
     registers = partial(get_register_value, dut.u_risc_v.u_register_file)
     init_clock(dut)
 
-    data = load_hex_from_txt(parent_dir / "rv32i_test.txt")
+    data = load_hex_from_txt(parent_dir / "../prog/rv32i_test.txt")
     # Writing the instructions to memory
     write_program_to_memory(dut, data)
     await ClockCycles(dut.clk, 2)
@@ -104,7 +104,7 @@ async def test_rgb_cycling(dut):
     init_clock(dut)
     reset_risc_v(dut.u_risc_v)
     # Writing the instructions to memory
-    data = load_hex_from_txt(parent_dir / "rgb_cycle.txt")
+    data = load_hex_from_txt(parent_dir / "../prog/rgb_cycle.txt")
     write_program_to_memory(dut, data)
     await ClockCycles(dut.clk, 2)  # Reprogramming complete
 
@@ -502,7 +502,7 @@ def test_top():
         waves=True,
         # NOTE: program can be passed as a parameter here
         # build_args=[
-        #     f'-Ptop.INIT_FILE="{parent_dir}/rv32i_test"'
+        #     f'-Ptop.INIT_FILE="{parent_dir}/../prog/rv32i_test"'
         # ],  # Doing the regular parameters dict doesn't seem to work for initial block
     )
     runner.test(
