@@ -1,3 +1,5 @@
+import subprocess
+
 import cocotb
 from cocotb.clock import Clock
 from cocotb.triggers import RisingEdge
@@ -10,13 +12,13 @@ def init_clock(dut, period_ns=10):
     _ = cocotb.start_soon(clock.start())
 
 
-def write_program_to_memory(dut, data: list[hex]):
+def write_program_to_memory(u_memory, data: list[hex]):
     """Write to memory."""
     memory_arrays = [
-        dut.u_memory.mem0,
-        dut.u_memory.mem1,
-        dut.u_memory.mem2,
-        dut.u_memory.mem3,
+        u_memory.mem0,
+        u_memory.mem1,
+        u_memory.mem2,
+        u_memory.mem3,
     ]
     for i, word in enumerate(data):
         for j, mem_array in enumerate(memory_arrays):
@@ -92,3 +94,11 @@ def get_word_from_memory(u_memory, base_address, offset_bytes):
 def get_register_value(u_register_file, reg_num):
     """Get register value."""
     return u_register_file.registers[reg_num].value
+
+
+def split_memhfile(input_filename: str):
+    """Split memory hex file into 4 parts."""
+    prog_dir = Path("../prog").resolve()
+    subprocess.run(
+        ["python", prog_dir / "split_memhfile.py", prog_dir / input_filename]
+    )

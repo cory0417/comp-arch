@@ -1,17 +1,22 @@
-import pathlib
+from pathlib import Path
 
 import cocotb
 from cocotb.triggers import Timer, RisingEdge
 from cocotb.runner import get_runner
-from utils import init_clock
+from utils import (
+    init_clock,
+    load_hex_from_txt,
+    split_memhfile,
+)
 
-parent_dir = pathlib.Path(__file__).parent
+parent_dir = Path(__file__).parent
+program_path = parent_dir.joinpath("../prog/rv32i_test.txt")
+program = load_hex_from_txt(program_path)
 
 
 @cocotb.test()
 async def test_memory_read_instruction(dut):
-    with open(f"{parent_dir}/rv32i_test.txt") as f:
-        first_word = int(f.read(8), 16)
+    first_word = program[0]
     init_clock(dut)
     dut.read_address.value = 0
     dut.funct3.value = 0b010  # For reading word at a time
@@ -27,8 +32,7 @@ async def test_memory_read_instruction(dut):
 
 @cocotb.test()
 async def test_memory_read_data_hw_unsigned(dut):
-    with open(f"{parent_dir}/rv32i_test.txt") as f:
-        second_word = int(f.readlines()[1], 16)
+    second_word = program[1]
     half_word_upper = (second_word >> 16) & 0x0000FFFF
     half_word_lower = second_word & 0x0000FFFF
     init_clock(dut)
@@ -51,9 +55,7 @@ async def test_memory_read_data_hw_unsigned(dut):
 
 @cocotb.test()
 async def test_memory_read_data_hw_signed(dut):
-    with open(f"{parent_dir}/rv32i_test.txt") as f:
-        third_word = int(f.readlines()[2], 16)
-
+    third_word = program[2]
     third_word_upper_sign = third_word & 0x80000000
     third_word_upper = (
         (third_word >> 16) | 0xFFFF0000
@@ -87,8 +89,7 @@ async def test_memory_read_data_hw_signed(dut):
 
 @cocotb.test()
 async def test_memory_read_data_byte_unsigned(dut):
-    with open(f"{parent_dir}/rv32i_test.txt") as f:
-        fourth_word = int(f.readlines()[3], 16)
+    fourth_word = program[3]
     byte_0 = fourth_word & 0x000000FF
     byte_1 = (fourth_word >> 8) & 0x000000FF
     byte_2 = (fourth_word >> 16) & 0x000000FF
@@ -120,8 +121,7 @@ async def test_memory_read_data_byte_unsigned(dut):
 
 @cocotb.test()
 async def test_memory_read_data_byte_signed(dut):
-    with open(f"{parent_dir}/rv32i_test.txt") as f:
-        fourth_word = int(f.readlines()[3], 16)
+    fourth_word = program[3]
     byte_0_sign = fourth_word & 0x00000080
     byte_1_sign = fourth_word & 0x00008000
     byte_2_sign = fourth_word & 0x00800000
@@ -228,16 +228,20 @@ async def test_memory_write_byte(dut):
 
 def test_memory():
     runner = get_runner("icarus")
+    split_memhfile("rv32i_test.txt")  # Split the hex file into 4 files
+    sources_dir = Path(__file__).parent.parent / "rtl"
+
     runner.build(
-        verilog_sources=["../rtl/memory.sv"],
+        verilog_sources=[sources_dir / "memory.sv"],
         hdl_toplevel="memory",
-        build_dir="sim_build/memory/",
+        build_dir=parent_dir / "sim_build/memory/",
         always=True,
         clean=True,
         verbose=True,
         timescale=("1ns", "1ns"),
+        waves=True,
         build_args=[
-            f'-Pmemory.INIT_FILE="{parent_dir}/rv32i_test"'
+            f'-Pmemory.INIT_FILE="{program_path.parent}/rv32i_test"',
         ],  # Doing the regular parameters dict doesn't seem to work for initial block
     )
     runner.test(
@@ -245,4 +249,5 @@ def test_memory():
         test_module="test_memory",
         hdl_toplevel_lang="verilog",
         results_xml=None,
+        waves=True,
     )
