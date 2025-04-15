@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="LanguageServerSettingsState">
+    <state>
+      <map>
+        <entry key="e4665504-a5b4-4ac7-995b-b27cbe51c3a5">
+          <value>
+            <LanguageServerDefinitionSettings>
+              <option name="errorReportingKind" value="as_notification" />
+              <option name="serverTrace" value="verbose" />
+            </LanguageServerDefinitionSettings>
+          </value>
+        </entry>
+      </map>
+    </state>
+  </component>
+</project>
