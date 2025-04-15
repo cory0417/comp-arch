@@ -34,7 +34,7 @@ clean:
 
 compile:
 	mkdir -p $(BUILD_DIR)
-	riscv-none-elf-gcc -o $(BUILD_DIR)/$(SRC_NAME).elf $(SRC_PATH).c $(STARTUP) $(GCC_FLAGS)
+	riscv-none-elf-gcc -o $(BUILD_DIR)/$(SRC_NAME).elf $(SRC_PATH).c $(STARTUP) ./prog/peripherals.h $(GCC_FLAGS)
 	riscv-none-elf-objcopy -O binary $(BUILD_DIR)/$(SRC_NAME).elf $(BUILD_DIR)/$(SRC_NAME).bin
 	od -An -H -v $(BUILD_DIR)/$(SRC_NAME).bin | sed -E 's/[[:space:]]+/\n/g' | sed -E '/^[[:space:]]*$$/d' > $(BUILD_DIR)/$(SRC_NAME).txt
 # For debugging, generate assembly code without linking

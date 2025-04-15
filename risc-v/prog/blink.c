@@ -1,12 +1,4 @@
-#define PERIPHERAL_BASE_ADDR 0xFFFFFFF4
-#define MICROS_ADDR (PERIPHERAL_BASE_ADDR + 0)
-#define MILLIS_ADDR (PERIPHERAL_BASE_ADDR + 4)
-#define LEDS_BASE_ADDR (PERIPHERAL_BASE_ADDR + 8)
-#define RGB_B_ADDR (LEDS_BASE_ADDR + 0)
-#define RGB_G_ADDR (LEDS_BASE_ADDR + 1)
-#define RGB_R_ADDR (LEDS_BASE_ADDR + 2)
-#define LED_ADDR (LEDS_BASE_ADDR + 3)
-#define CLK_HZ 12000000 // 12MHz
+#include "peripherals.h"
 
 void delay(int clk_ticks) {
   int count = clk_ticks >> 4;
