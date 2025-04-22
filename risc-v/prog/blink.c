@@ -1,13 +1,5 @@
 #include "peripherals.h"
 
-void delay(int clk_ticks) {
-  int count = clk_ticks >> 4;
-  for (volatile int i = 0; i < count; i++) {
-    ;
-  }
-}
-
-
 int main(void) {
   volatile char *led = (volatile char *)LED_ADDR;
   volatile char *rgb_r = (volatile char *)RGB_R_ADDR;
@@ -19,20 +11,24 @@ int main(void) {
   *rgb_b = 0xFF;
 
   while (1) {
-    *led = 0xFF; // Set LED to 0xFF
+    *led = 0xFF;
     *rgb_b = 0xFF;
     *rgb_r = 0x00;
-    delay(CLK_HZ >> 1); // Delay for 0.5 seconds
-    *led = 0x00; // Set LED to 0x00
-    delay(CLK_HZ >> 1); // Delay for 0.5 seconds
-    *led = 0xFF; // Set LED to 0xFF
+    int count = CLK_HZ >> 5;
+    for (volatile int i = 0; i < count; i++);
+    *led = 0x00;
+    count = CLK_HZ >> 5;
+    for (volatile int i = 0; i < count; i++);
+    *led = 0xFF;
     *rgb_r = 0xFF;
     *rgb_g = 0x00;
-    delay(CLK_HZ >> 1); // Delay for 0.5 seconds
-    *led = 0x00; // Set LED to 0x00
+    count = CLK_HZ >> 5;
+    for (volatile int i = 0; i < count; i++);
+    *led = 0x00;
     *rgb_g = 0xFF;
     *rgb_b = 0x00;
-    delay(CLK_HZ >> 1); // Delay for 0.5 seconds
+    count = CLK_HZ >> 5;
+    for (volatile int i = 0; i < count; i++);
   }
   return 0;
 }
