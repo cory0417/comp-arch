@@ -6,10 +6,10 @@ In this section, I will describe each module briefly, including its purpose and 
 
 \subsection{Types}
 
-The `types.sv` file contains various enumerations and constants used throughout the design.
+The \texttt{rtl/types.sv} file contains various enumerations and constants used throughout the design.
 These include the instruction types, CPU states, RV32I op codes, funct3 bits, funct7 bits, and ALU control signals.
-Although SystemVerilog supports a convenient way to export this module as a package, since `yosys` does not support this feature, I had to use a workaround by converting every `.sv` file to a `v` file using
-\href{https://github.com/zachjs/sv2v}{`sv2v`}.
+Although SystemVerilog supports a convenient way to export this module as a package, since \texttt{yosys} does not support this feature, I had to use a workaround by converting every \texttt{.sv} file to a \texttt{.v} file using
+\href{https://github.com/zachjs/sv2v}{\texttt{sv2v}}.
 
 
 \subsection{Arithmetic Logic Unit (ALU)}
