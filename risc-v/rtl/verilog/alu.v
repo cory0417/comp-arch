@@ -25,12 +25,12 @@ module alu (
 		case (alu_control)
 			4'd0: alu_result = add_result;
 			4'd1: alu_result = sub_result;
-			4'd2: alu_result = alu_in1 << (alu_in2 & 5'b11111);
-			4'd3: alu_result = lt;
-			4'd4: alu_result = ltu;
+			4'd2: alu_result = alu_in1 << (alu_in2 & 32'h0000001f);
+			4'd3: alu_result = {31'b0000000000000000000000000000000, lt};
+			4'd4: alu_result = {31'b0000000000000000000000000000000, ltu};
 			4'd5: alu_result = alu_in1 ^ alu_in2;
-			4'd6: alu_result = alu_in1 >> (alu_in2 & 5'b11111);
-			4'd7: alu_result = $signed(alu_in1) >>> (alu_in2 & 5'b11111);
+			4'd6: alu_result = alu_in1 >> (alu_in2 & 32'h0000001f);
+			4'd7: alu_result = $signed(alu_in1) >>> (alu_in2 & 32'h0000001f);
 			4'd8: alu_result = alu_in1 | alu_in2;
 			4'd9: alu_result = alu_in1 & alu_in2;
 			4'd10: alu_result = {31'b0000000000000000000000000000000, eq};

@@ -101,7 +101,7 @@ module memory #(
 
   // Instaniate memory arrays
   memory_array #(
-      .INIT_FILE((INIT_FILE != "") ? {INIT_FILE, "0.txt"} : "")
+      .INIT_FILE((INIT_FILE != "") ? $sformatf("%s0.txt", INIT_FILE) : "")
   ) mem0 (
       .clk          (clk),
       .write_enable (mem_write_enable0),
@@ -112,7 +112,7 @@ module memory #(
   );
 
   memory_array #(
-      .INIT_FILE((INIT_FILE != "") ? {INIT_FILE, "1.txt"} : "")
+      .INIT_FILE((INIT_FILE != "") ? $sformatf("%s0.txt", INIT_FILE) : "")
   ) mem1 (
       .clk          (clk),
       .write_enable (mem_write_enable1),
@@ -123,7 +123,7 @@ module memory #(
   );
 
   memory_array #(
-      .INIT_FILE((INIT_FILE != "") ? {INIT_FILE, "2.txt"} : "")
+      .INIT_FILE((INIT_FILE != "") ? $sformatf("%s0.txt", INIT_FILE) : "")
   ) mem2 (
       .clk          (clk),
       .write_enable (mem_write_enable2),
@@ -134,7 +134,7 @@ module memory #(
   );
 
   memory_array #(
-      .INIT_FILE((INIT_FILE != "") ? {INIT_FILE, "3.txt"} : "")
+      .INIT_FILE((INIT_FILE != "") ? $sformatf("%s0.txt", INIT_FILE) : "")
   ) mem3 (
       .clk          (clk),
       .write_enable (mem_write_enable3),
@@ -369,11 +369,11 @@ module memory_array #(
 
   // Initialize memory array
   initial begin
-    if (INIT_FILE) begin
+    if (INIT_FILE != "") begin
       $readmemh(INIT_FILE, memory);
     end else begin
       for (i = 0; i < 2048; i++) begin
-        memory[i] <= 8'd0;
+        memory[i] = 8'd0;
       end
     end
   end

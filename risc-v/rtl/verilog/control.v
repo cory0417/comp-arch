@@ -29,7 +29,6 @@ module control (
 	always @(*) begin
 		if (_sv2v_0)
 			;
-		(* full_case, parallel_case *)
 		case (op)
 			types_OP_LUI: instruction_type = 3'd0;
 			types_OP_AUIPC: instruction_type = 3'd0;
@@ -40,6 +39,7 @@ module control (
 			types_OP_LOAD: instruction_type = 3'd3;
 			types_OP_STORE: instruction_type = 3'd4;
 			types_OP_BRANCH: instruction_type = 3'd5;
+			default: instruction_type = 3'd2;
 		endcase
 	end
 	always @(*) begin
@@ -70,11 +70,8 @@ module control (
 	localparam [2:0] types_FUNCT3_SLTI = 3'b010;
 	localparam [2:0] types_FUNCT3_SLTIU = 3'b011;
 	localparam [2:0] types_FUNCT3_SLTU = 3'b011;
-	localparam [2:0] types_FUNCT3_SRA = 3'b101;
-	localparam [2:0] types_FUNCT3_SRAI = 3'b101;
 	localparam [2:0] types_FUNCT3_SRL = 3'b101;
 	localparam [2:0] types_FUNCT3_SRLI = 3'b101;
-	localparam [2:0] types_FUNCT3_SUB = 3'b000;
 	localparam [2:0] types_FUNCT3_XOR = 3'b100;
 	localparam [2:0] types_FUNCT3_XORI = 3'b100;
 	always @(*) begin
@@ -85,12 +82,12 @@ module control (
 				alu_src = 0;
 				(* full_case, parallel_case *)
 				case (funct3)
-					types_FUNCT3_ADD, types_FUNCT3_SUB: alu_control = (funct7_5 ? 4'd1 : 4'd0);
+					types_FUNCT3_ADD: alu_control = (funct7_5 ? 4'd1 : 4'd0);
 					types_FUNCT3_SLL: alu_control = 4'd2;
 					types_FUNCT3_SLT: alu_control = 4'd3;
 					types_FUNCT3_SLTU: alu_control = 4'd4;
 					types_FUNCT3_XOR: alu_control = 4'd5;
-					types_FUNCT3_SRL, types_FUNCT3_SRA: alu_control = (funct7_5 ? 4'd7 : 4'd6);
+					types_FUNCT3_SRL: alu_control = (funct7_5 ? 4'd7 : 4'd6);
 					types_FUNCT3_OR: alu_control = 4'd8;
 					types_FUNCT3_AND: alu_control = 4'd9;
 				endcase
@@ -106,12 +103,11 @@ module control (
 					types_FUNCT3_ORI: alu_control = 4'd8;
 					types_FUNCT3_ANDI: alu_control = 4'd9;
 					types_FUNCT3_SLLI: alu_control = 4'd2;
-					types_FUNCT3_SRLI, types_FUNCT3_SRAI: alu_control = (funct7_5 ? 4'd7 : 4'd6);
+					types_FUNCT3_SRLI: alu_control = (funct7_5 ? 4'd7 : 4'd6);
 				endcase
 			end
 			types_OP_BRANCH: begin
 				alu_src = 0;
-				(* full_case, parallel_case *)
 				case (funct3)
 					types_FUNCT3_BEQ: alu_control = 4'd10;
 					types_FUNCT3_BNE: alu_control = 4'd11;
@@ -119,10 +115,11 @@ module control (
 					types_FUNCT3_BGE: alu_control = 4'd13;
 					types_FUNCT3_BLTU: alu_control = 4'd14;
 					types_FUNCT3_BGEU: alu_control = 4'd15;
+					default: alu_control = 4'd10;
 				endcase
 			end
 			default: begin
-				alu_control = 3'b000;
+				alu_control = 4'b0000;
 				alu_src = 0;
 			end
 		endcase

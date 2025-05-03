@@ -1,5 +1,6 @@
 module risc_v (
 	clk,
+	reset_n,
 	mem_wen,
 	mem_ra,
 	mem_wa,
@@ -9,6 +10,7 @@ module risc_v (
 );
 	reg _sv2v_0;
 	input wire clk;
+	input wire reset_n;
 	output wire mem_wen;
 	output reg [31:0] mem_ra;
 	output wire [31:0] mem_wa;
@@ -63,6 +65,7 @@ module risc_v (
 	assign mem_wa = rs1 + imm_ext;
 	register_file u_register_file(
 		.clk(clk),
+		.reset_n(reset_n),
 		.a1(rs1_addr),
 		.a2(rs2_addr),
 		.a3(rd_addr),
@@ -122,26 +125,27 @@ module risc_v (
 			mem_ra = pc_next;
 	end
 	always @(posedge clk)
-		case (state)
-			2'd0: begin
-				if (is_jal)
-					pc <= pc_next;
-				state <= 2'd1;
-				instr <= mem_rd;
-			end
-			2'd1: begin
-				if (!is_jal)
-					pc <= pc_next;
-				if (is_load | is_store)
-					state <= 2'd2;
-				else
-					state <= 2'd0;
-			end
-			default: state <= 2'd0;
-		endcase
-	initial begin
-		pc = 32'b00000000000000000000000000000000;
-		state = 2'd2;
-	end
+		if (!reset_n) begin
+			pc <= 32'b00000000000000000000000000000000;
+			state <= 2'd2;
+		end
+		else
+			case (state)
+				2'd0: begin
+					if (is_jal)
+						pc <= pc_next;
+					state <= 2'd1;
+					instr <= mem_rd;
+				end
+				2'd1: begin
+					if (!is_jal)
+						pc <= pc_next;
+					if (is_load | is_store)
+						state <= 2'd2;
+					else
+						state <= 2'd0;
+				end
+				default: state <= 2'd0;
+			endcase
 	initial _sv2v_0 = 0;
 endmodule

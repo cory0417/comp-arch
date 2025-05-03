@@ -2,6 +2,7 @@ import types::*;
 
 module risc_v (
     input logic clk,
+    input logic reset_n,
 
     output logic mem_wen,  // memory write enable
     output logic [31:0] mem_ra,  // address to read in memory
@@ -57,11 +58,12 @@ module risc_v (
 
   register_file u_register_file (
       .clk(clk),
-      .a1 (rs1_addr),
-      .a2 (rs2_addr),
-      .a3 (rd_addr),
-      .wd (rd_data),
-      .wen(reg_wen),   // from control unit
+      .reset_n(reset_n),
+      .a1(rs1_addr),
+      .a2(rs2_addr),
+      .a3(rd_addr),
+      .wd(rd_data),
+      .wen(reg_wen),  // from control unit
       .rd1(rs1),
       .rd2(rs2)
   );
@@ -130,29 +132,29 @@ module risc_v (
 
 
   always_ff @(posedge clk) begin
-    case (state)
-      FETCH_INSTR: begin
-        if (is_jal) pc <= pc_next;
-        state <= EXECUTE;
-        instr <= mem_rd;
-      end
-      EXECUTE: begin
-        if (!is_jal) pc <= pc_next;
-        // Two cases for next state
-        if (is_load | is_store) begin
-          state <= WAIT_MEM;  // Wait for memory operation
-        end else begin
-          state <= FETCH_INSTR;  // Go back to fetch next instruction
+    if (!reset_n) begin
+      pc <= 32'b0;  // Initialize program counter to -4 to start at 0 when it loads pc+4
+      state <= WAIT_MEM;  // Start in instruction fetch state
+    end else begin
+      case (state)
+        FETCH_INSTR: begin
+          if (is_jal) pc <= pc_next;
+          state <= EXECUTE;
+          instr <= mem_rd;
         end
-      end
-      default: begin  // state == WAIT_MEM
-        state <= FETCH_INSTR;  // Just need this extra state to wait for memory
-      end
-    endcase
-  end
-
-  initial begin
-    pc = 32'b0;  // Initialize program counter to -4 to start at 0 when it loads pc+4
-    state = WAIT_MEM;  // Start in instruction fetch state
+        EXECUTE: begin
+          if (!is_jal) pc <= pc_next;
+          // Two cases for next state
+          if (is_load | is_store) begin
+            state <= WAIT_MEM;  // Wait for memory operation
+          end else begin
+            state <= FETCH_INSTR;  // Go back to fetch next instruction
+          end
+        end
+        default: begin  // state == WAIT_MEM
+          state <= FETCH_INSTR;  // Just need this extra state to wait for memory
+        end
+      endcase
+    end
   end
 endmodule

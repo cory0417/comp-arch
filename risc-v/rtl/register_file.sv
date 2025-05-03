@@ -1,7 +1,6 @@
-`timescale 1ns / 1ns
-
 module register_file (
     input logic clk,
+    input logic reset_n,
     input logic [4:0] a1,  // source register address 2
     input logic [4:0] a2,  // source register address 2
     input logic [4:0] a3,  // destination register address
@@ -23,7 +22,11 @@ module register_file (
   assign rd2 = (a2 != 0) ? registers[a2] : 32'b0;
 
   always_ff @(posedge clk) begin
-    if (wen && a3 != 5'd0) begin
+    if (!reset_n) begin
+      for (int i = 0; i < 32; i++) begin
+        registers[i] <= 32'b0;
+      end
+    end else if (wen && a3 != 5'd0) begin
       registers[a3] <= wd;
     end
   end

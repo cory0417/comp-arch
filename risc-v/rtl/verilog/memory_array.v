@@ -15,11 +15,11 @@ module memory_array (
 	output reg [7:0] read_data;
 	reg [7:0] memory [0:2047];
 	reg signed [31:0] i;
-	initial if (INIT_FILE)
+	initial if (INIT_FILE != "")
 		$readmemh(INIT_FILE, memory);
 	else
 		for (i = 0; i < 2048; i = i + 1)
-			memory[i] <= 8'd0;
+			memory[i] = 8'd0;
 	always @(posedge clk) read_data <= memory[read_address];
 	always @(posedge clk)
 		if (write_enable)

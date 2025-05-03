@@ -1,5 +1,6 @@
 module register_file (
 	clk,
+	reset_n,
 	a1,
 	a2,
 	a3,
@@ -9,6 +10,7 @@ module register_file (
 	rd2
 );
 	input wire clk;
+	input wire reset_n;
 	input wire [4:0] a1;
 	input wire [4:0] a2;
 	input wire [4:0] a3;
@@ -25,6 +27,11 @@ module register_file (
 	assign rd1 = (a1 != 0 ? registers[a1] : 32'b00000000000000000000000000000000);
 	assign rd2 = (a2 != 0 ? registers[a2] : 32'b00000000000000000000000000000000);
 	always @(posedge clk)
-		if (wen && (a3 != 5'd0))
+		if (!reset_n) begin : sv2v_autoblock_2
+			reg signed [31:0] i;
+			for (i = 0; i < 32; i = i + 1)
+				registers[i] <= 32'b00000000000000000000000000000000;
+		end
+		else if (wen && (a3 != 5'd0))
 			registers[a3] <= wd;
 endmodule

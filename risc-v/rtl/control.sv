@@ -12,7 +12,7 @@ module control (
     output instruction_t instruction_type  // instruction type
 );
   always_comb begin
-    unique case (op)
+    case (op)
       OP_LUI: instruction_type = U_TYPE;  // LUI
       OP_AUIPC: instruction_type = U_TYPE;  // AUIPC
       OP_JAL: instruction_type = J_TYPE;  // JAL
@@ -22,6 +22,7 @@ module control (
       OP_LOAD: instruction_type = I_TYPE;  // LB, LH, LW
       OP_STORE: instruction_type = S_TYPE;  // SB, SH, SW
       OP_BRANCH: instruction_type = B_TYPE;  // BEQ, BNE, BLT, BGE, BLTU, BGEU
+      default: instruction_type = R_TYPE;  // Default to R_TYPE for unused opcodes
     endcase
   end
 
@@ -41,42 +42,46 @@ module control (
       OP_REG: begin
         alu_src = 0;  // rs1, rs2
         unique case (funct3)
-          FUNCT3_ADD, FUNCT3_SUB: alu_control = funct7_5 ? ALU_SUB : ALU_ADD;
-          FUNCT3_SLL: alu_control = ALU_SLL;
-          FUNCT3_SLT: alu_control = ALU_SLT;
+          // FUNCT3_SUB is same as FUNCT3_ADD
+          FUNCT3_ADD:  alu_control = funct7_5 ? ALU_SUB : ALU_ADD;
+          FUNCT3_SLL:  alu_control = ALU_SLL;
+          FUNCT3_SLT:  alu_control = ALU_SLT;
           FUNCT3_SLTU: alu_control = ALU_SLTU;
-          FUNCT3_XOR: alu_control = ALU_XOR;
-          FUNCT3_SRL, FUNCT3_SRA: alu_control = funct7_5 ? ALU_SRA : ALU_SRL;
-          FUNCT3_OR: alu_control = ALU_OR;
-          FUNCT3_AND: alu_control = ALU_AND;
+          FUNCT3_XOR:  alu_control = ALU_XOR;
+          // FUNCT3_SRA is same as FUNCT3_SRL
+          FUNCT3_SRL:  alu_control = funct7_5 ? ALU_SRA : ALU_SRL;
+          FUNCT3_OR:   alu_control = ALU_OR;
+          FUNCT3_AND:  alu_control = ALU_AND;
         endcase
       end
       OP_IMM: begin
         alu_src = 1;  // rs1, imm
         unique case (funct3)
-          FUNCT3_ADDI: alu_control = ALU_ADD;
-          FUNCT3_SLTI: alu_control = ALU_SLT;
+          FUNCT3_ADDI:  alu_control = ALU_ADD;
+          FUNCT3_SLTI:  alu_control = ALU_SLT;
           FUNCT3_SLTIU: alu_control = ALU_SLTU;
-          FUNCT3_XORI: alu_control = ALU_XOR;
-          FUNCT3_ORI: alu_control = ALU_OR;
-          FUNCT3_ANDI: alu_control = ALU_AND;
-          FUNCT3_SLLI: alu_control = ALU_SLL;
-          FUNCT3_SRLI, FUNCT3_SRAI: alu_control = funct7_5 ? ALU_SRA : ALU_SRL;
+          FUNCT3_XORI:  alu_control = ALU_XOR;
+          FUNCT3_ORI:   alu_control = ALU_OR;
+          FUNCT3_ANDI:  alu_control = ALU_AND;
+          FUNCT3_SLLI:  alu_control = ALU_SLL;
+          // FUNCT3_SRAI is same as FUNCT3_SRLI
+          FUNCT3_SRLI:  alu_control = funct7_5 ? ALU_SRA : ALU_SRL;
         endcase
       end
       OP_BRANCH: begin
         alu_src = 0;  // rs1, rs2
-        unique case (funct3)
-          FUNCT3_BEQ:  alu_control = ALU_BEQ;
-          FUNCT3_BNE:  alu_control = ALU_BNE;
-          FUNCT3_BLT:  alu_control = ALU_BLT;
-          FUNCT3_BGE:  alu_control = ALU_BGE;
+        case (funct3)
+          FUNCT3_BEQ: alu_control = ALU_BEQ;
+          FUNCT3_BNE: alu_control = ALU_BNE;
+          FUNCT3_BLT: alu_control = ALU_BLT;
+          FUNCT3_BGE: alu_control = ALU_BGE;
           FUNCT3_BLTU: alu_control = ALU_BLTU;
           FUNCT3_BGEU: alu_control = ALU_BGEU;
+          default: alu_control = ALU_BEQ;  // Default to BEQ
         endcase
       end
       default: begin  // Unused for: LUI, AUIPC, LOAD, STORE, JALR, JAL
-        alu_control = 3'b000;
+        alu_control = 4'b0;
         alu_src = 0;
       end
     endcase

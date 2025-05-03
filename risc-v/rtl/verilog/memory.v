@@ -69,7 +69,7 @@ module memory (
 	wire [7:0] mem_read_data1;
 	wire [7:0] mem_read_data2;
 	wire [7:0] mem_read_data3;
-	memory_array #(.INIT_FILE((INIT_FILE != "" ? {INIT_FILE, "0.txt"} : ""))) mem0(
+	memory_array #(.INIT_FILE((INIT_FILE != "" ? $sformatf("%s0.txt", INIT_FILE) : ""))) mem0(
 		.clk(clk),
 		.write_enable(mem_write_enable0),
 		.write_address(write_address[12:2]),
@@ -77,7 +77,7 @@ module memory (
 		.read_address(read_address[12:2]),
 		.read_data(mem_read_data0)
 	);
-	memory_array #(.INIT_FILE((INIT_FILE != "" ? {INIT_FILE, "1.txt"} : ""))) mem1(
+	memory_array #(.INIT_FILE((INIT_FILE != "" ? $sformatf("%s0.txt", INIT_FILE) : ""))) mem1(
 		.clk(clk),
 		.write_enable(mem_write_enable1),
 		.write_address(write_address[12:2]),
@@ -85,7 +85,7 @@ module memory (
 		.read_address(read_address[12:2]),
 		.read_data(mem_read_data1)
 	);
-	memory_array #(.INIT_FILE((INIT_FILE != "" ? {INIT_FILE, "2.txt"} : ""))) mem2(
+	memory_array #(.INIT_FILE((INIT_FILE != "" ? $sformatf("%s0.txt", INIT_FILE) : ""))) mem2(
 		.clk(clk),
 		.write_enable(mem_write_enable2),
 		.write_address(write_address[12:2]),
@@ -93,7 +93,7 @@ module memory (
 		.read_address(read_address[12:2]),
 		.read_data(mem_read_data2)
 	);
-	memory_array #(.INIT_FILE((INIT_FILE != "" ? {INIT_FILE, "3.txt"} : ""))) mem3(
+	memory_array #(.INIT_FILE((INIT_FILE != "" ? $sformatf("%s0.txt", INIT_FILE) : ""))) mem3(
 		.clk(clk),
 		.write_enable(mem_write_enable3),
 		.write_address(write_address[12:2]),
