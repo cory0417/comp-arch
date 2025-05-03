@@ -8,7 +8,7 @@ from utils import init_clock, reset_registers
 
 @cocotb.test()
 async def register_read_tb(dut):
-    init_clock(dut)
+    init_clock(dut.clk)
     reset_registers(dut)
 
     dut.a1.value = 1
@@ -28,7 +28,7 @@ async def register_read_tb(dut):
 
 @cocotb.test()
 async def register_write_and_read_tb(dut):
-    init_clock(dut)
+    init_clock(dut.clk)
     reset_registers(dut)
 
     dut.wd.value = 0xDEADBEEF
@@ -58,7 +58,7 @@ async def register_write_and_read_tb(dut):
 
 @cocotb.test()
 async def register_write_to_zero(dut):
-    init_clock(dut)
+    init_clock(dut.clk)
     reset_registers(dut)
 
     dut.a1.value = 0

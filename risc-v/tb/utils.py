@@ -5,9 +5,9 @@ from cocotb.clock import Clock
 from pathlib import Path
 
 
-def init_clock(dut, period_ns=10):
+def init_clock(clk, period_ns=10):
     """Initialize clock signal for DUT."""
-    clock = Clock(dut.clk, period_ns, units="ns")
+    clock = Clock(clk, period_ns, units="ns")
     _ = cocotb.start_soon(clock.start())
 
 

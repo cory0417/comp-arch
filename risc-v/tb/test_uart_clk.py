@@ -8,7 +8,7 @@ from utils import init_clock
 
 @cocotb.test()
 async def test_uart_clk_generation(dut):
-    init_clock(dut, period_ns=41.7)  # 24 MHz clock period
+    init_clock(dut.clk, period_ns=41.7)  # 24 MHz clock period
     await RisingEdge(dut.clk)
     dut.reset_n.value = 0
     await RisingEdge(dut.clk)

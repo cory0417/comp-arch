@@ -1,8 +1,10 @@
 from pathlib import Path
 
 import cocotb
-from cocotb.triggers import ClockCycles, Timer
+from cocotb.triggers import ClockCycles, Timer, RisingEdge
 from cocotb.runner import get_runner
+from cocotb.types import Logic
+
 from utils import (
     init_clock,
     write_program_to_memory,
@@ -36,12 +38,14 @@ async def test_r_i_u_s_instructions(dut):
     lw x11, 98(x5)          # pc = 0x30, x11 = 0xFEDCBA98
     """
     registers = partial(get_register_value, dut.u_risc_v.u_register_file)
-    init_clock(dut)
+    init_clock(dut.clk)
 
     data = load_hex_from_txt(parent_dir / "../prog/rv32i_test.txt")
     # Writing the instructions to memory
     write_program_to_memory(dut.u_memory, data)
     await ClockCycles(dut.clk, 2)
+
+    await ClockCycles(dut.clk, 2)  # Wait for reset
 
     await ClockCycles(
         dut.clk, 22
@@ -101,7 +105,7 @@ async def test_rgb_cycling(dut):
     jal x0, -52       # jump back up to storing red bits
     """
     registers = partial(get_register_value, dut.u_risc_v.u_register_file)
-    init_clock(dut)
+    init_clock(dut.clk)
     reset_risc_v(dut.u_risc_v)
     # Writing the instructions to memory
     data = load_hex_from_txt(parent_dir / "../prog/rgb_cycle.txt")
@@ -213,7 +217,7 @@ async def test_unconditional_jumps(dut):
     6. sub x4, x3, x1
     """
     registers = partial(get_register_value, dut.u_risc_v.u_register_file)
-    init_clock(dut)
+    init_clock(dut.clk)
     reset_risc_v(dut.u_risc_v)
     # Writing the instructions to memory
     data = [
@@ -267,7 +271,7 @@ async def test_conditional_jumps(dut):
     13. addi x6, x2, 5
     """
     registers = partial(get_register_value, dut.u_risc_v.u_register_file)
-    init_clock(dut)
+    init_clock(dut.clk)
     reset_risc_v(dut.u_risc_v)
     # Writing the instructions to memory
     data = [
@@ -316,7 +320,7 @@ async def test_load_store(dut):
     lb x11, 109(x0) # pc = 0x34, x11 = 0xFFFF_FF8F
     """
     registers = partial(get_register_value, dut.u_risc_v.u_register_file)
-    init_clock(dut)
+    init_clock(dut.clk)
     reset_risc_v(dut.u_risc_v)
     data = [
         0x1F2E30B7,  # lui x1 0x1f2e3
@@ -394,7 +398,7 @@ async def test_integer_register_immediate(dut):
     srai x11, x10, 2      # pc = 0x24, x11 = 0x003F_0000
     """
     registers = partial(get_register_value, dut.u_risc_v.u_register_file)
-    init_clock(dut)
+    init_clock(dut.clk)
     reset_risc_v(dut.u_risc_v)
     data = [
         0x80F00093,  # addi x1 x0 -2033
@@ -445,7 +449,7 @@ async def test_integer_register_register(dut):
     and x12, x10, x11       # pc = 0x2C, x12 = 0x7FFFFFFF
     """
     registers = partial(get_register_value, dut.u_risc_v.u_register_file)
-    init_clock(dut)
+    init_clock(dut.clk)
     reset_risc_v(dut.u_risc_v)
     data = [
         0x00100093,  # addi x1 x0 1
@@ -479,6 +483,45 @@ async def test_integer_register_register(dut):
     assert registers(12) == 0x7FFFFFFF
 
 
+@cocotb.test()
+async def test_uart_rx(dut):
+    init_clock(dut.clk, period_ns=41.7)  # 24 MHz clock period
+    await RisingEdge(dut.clk)
+    dut.uart_reset_n.value = 0
+    await RisingEdge(dut.clk)
+    dut.uart_reset_n.value = 1
+    dut.u_uart.rx.value = 1
+    await RisingEdge(dut.clk)
+
+    data = 0b10110101  # Example data to be received
+
+    dut.u_uart.rx.value = Logic(0)  # Start bit
+    await ClockCycles(dut.u_uart.u_uart_rx.clk, 8)  # Wait for 1 start bit time
+    for i in range(8):
+        dut.u_uart.rx.value = Logic(bool(data & (1 << i)))  # Set the data bit
+        await ClockCycles(dut.u_uart.u_uart_rx.clk, 8)
+    dut.u_uart.rx.value = Logic(1)
+    assert dut.u_uart.rx_data.value == data
+
+    await ClockCycles(dut.u_uart.u_uart_rx.clk, 4)  # Stop bit
+    await Timer(1, units="ns")  # Wait for the stop bit to be processed
+    assert dut.u_uart.u_uart_rx.rx_state.value == 0  # IDLE state
+    await ClockCycles(dut.u_uart.u_uart_rx.clk, 4)  # Stop bit
+
+    # Try another data
+    data = 0x0F
+    dut.u_uart.rx.value = Logic(0)
+    await ClockCycles(dut.u_uart.u_uart_rx.clk, 8)
+    for i in range(8):
+        dut.u_uart.rx.value = Logic(bool(data & (1 << i)))
+        await ClockCycles(dut.u_uart.u_uart_rx.clk, 8)
+    dut.u_uart.rx.value = Logic(1)
+    await ClockCycles(dut.u_uart.u_uart_rx.clk, 4)
+    assert dut.u_uart.rx_data.value == data
+    await Timer(1, units="ns")
+    assert dut.u_uart.u_uart_rx.rx_state.value == 0
+
+
 def test_top():
     runner = get_runner("icarus")
     sources_dir = Path(__file__).parent.parent / "rtl"
@@ -492,6 +535,10 @@ def test_top():
             sources_dir / "imm_extender.sv",
             sources_dir / "risc_v.sv",
             sources_dir / "memory.sv",
+            sources_dir / "uart_clk.sv",
+            sources_dir / "uart_rx.sv",
+            sources_dir / "uart.sv",
+            sources_dir / "uart_fifo.sv",
             sources_dir / "top.sv",
         ],
         hdl_toplevel="top",
@@ -499,12 +546,12 @@ def test_top():
         always=True,
         clean=True,
         verbose=True,
-        timescale=("1ns", "1ns"),
+        timescale=("1ns", "10ps"),
         waves=True,
         # NOTE: program can be passed as a parameter here
-        # build_args=[
-        #     f'-Ptop.INIT_FILE="{parent_dir}/../prog/rv32i_test"'
-        # ],  # Doing the regular parameters dict doesn't seem to work for initial block
+        build_args=[
+            f'-Ptop.INIT_FILE="{parent_dir}/../prog/rv32i_test"'
+        ],  # Doing the regular parameters dict doesn't seem to work for initial block
     )
     runner.test(
         hdl_toplevel="top",

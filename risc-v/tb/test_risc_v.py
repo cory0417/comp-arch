@@ -10,7 +10,7 @@ from test_control import PCSrc
 
 @cocotb.test()
 async def test_addi_add(dut):
-    init_clock(dut)
+    init_clock(dut.clk)
 
     instr_1 = 0b00000000001000000000000010010011  # addi x1, x0, 2
     dut.mem_rd.value = instr_1

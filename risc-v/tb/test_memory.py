@@ -17,7 +17,7 @@ program = load_hex_from_txt(program_path)
 @cocotb.test()
 async def test_memory_read_instruction(dut):
     first_word = program[0]
-    init_clock(dut)
+    init_clock(dut.clk)
     dut.read_address.value = 0
     dut.funct3.value = 0b010  # For reading word at a time
 
@@ -35,7 +35,7 @@ async def test_memory_read_data_hw_unsigned(dut):
     second_word = program[1]
     half_word_upper = (second_word >> 16) & 0x0000FFFF
     half_word_lower = second_word & 0x0000FFFF
-    init_clock(dut)
+    init_clock(dut.clk)
     dut.read_address.value = 4  # Read the second word
     dut.funct3.value = 0b101  # For reading half-word at a time
 
@@ -69,7 +69,7 @@ async def test_memory_read_data_hw_signed(dut):
         else third_word & 0x0000FFFF
     )
 
-    init_clock(dut)
+    init_clock(dut.clk)
     dut.read_address.value = 8
     dut.funct3.value = 0b001  # For reading half-word at a time
 
@@ -94,7 +94,7 @@ async def test_memory_read_data_byte_unsigned(dut):
     byte_1 = (fourth_word >> 8) & 0x000000FF
     byte_2 = (fourth_word >> 16) & 0x000000FF
     byte_3 = (fourth_word >> 24) & 0x000000FF
-    init_clock(dut)
+    init_clock(dut.clk)
     dut.read_address.value = 12
     dut.funct3.value = 0b100  # For reading unsigned byte at a time
 
@@ -147,7 +147,7 @@ async def test_memory_read_data_byte_signed(dut):
         else (fourth_word >> 24) & 0x000000FF
     )
 
-    init_clock(dut)
+    init_clock(dut.clk)
     dut.read_address.value = 12
     dut.funct3.value = 0b000  # For reading signed byte at a time
 
@@ -174,7 +174,7 @@ async def test_memory_read_data_byte_signed(dut):
 
 @cocotb.test()
 async def test_memory_write_word(dut):
-    init_clock(dut)
+    init_clock(dut.clk)
     dut.funct3.value = 0b010
     dut.write_mem.value = 1
     dut.read_address.value = 0
@@ -191,7 +191,7 @@ async def test_memory_write_word(dut):
 
 
 async def test_memory_write_hw(dut):
-    init_clock(dut)
+    init_clock(dut.clk)
     dut.funct3.value = 0b001
     dut.write_mem.value = 1
     dut.read_address.value = 0
@@ -209,7 +209,7 @@ async def test_memory_write_hw(dut):
 
 
 async def test_memory_write_byte(dut):
-    init_clock(dut)
+    init_clock(dut.clk)
     dut.funct3.value = 0b000
     dut.write_mem.value = 1
     dut.read_address.value = 0
