@@ -34,13 +34,10 @@ module uart_rx (
       case (rx_state)
         IDLE: begin
           rx_data_ready <= 0;
-          if (~rx) begin  // start asserted
+          oversample_counter <= 0;  // reset counter if start bit not detected
+          if (~rx) begin
             rx_state <= START;
-            oversample_counter <= oversample_counter + 1;
-            if (oversample_counter == SampleOffset - 1) begin
-              oversample_counter <= 0;
-            end
-          end else oversample_counter <= 0;  // reset counter if start bit not detected
+          end
         end
         START: begin
           oversample_counter <= oversample_counter + 1;

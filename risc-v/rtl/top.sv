@@ -48,7 +48,7 @@ module top #(
 `endif
 `ifdef DEBUG
   // For debugging
-  assign _39a = clk;
+  // assign _39a = clk;
   always_ff @(posedge clk) begin
     _31b <= LED;
     _29b <= RGB_R;
@@ -103,12 +103,12 @@ module top #(
   logic [7:0] rx_fifo_wd;
   logic [8:0] rx_fifo_wa;
   logic [7:0] instr_mem_reinit_data;
-  logic [8:0] rx_fifo_addr, instr_mem_reinit_addr, buffered_instr_mem_reinit_addr;
+  logic [8:0] rx_fifo_addr, instr_mem_reinit_addr, buffered_instr_mem_reinit_addr, mem_instr_addr;
   logic mem_wen_reinit;
 
 
   assign mem_wd_mux = (rx_fifo_full) ? {24'b0, instr_mem_reinit_data} : mem_wd;
-  assign mem_wa_mux = (rx_fifo_full) ? {23'b0, buffered_instr_mem_reinit_addr} : mem_wa;
+  assign mem_wa_mux = (rx_fifo_full) ? {23'b0, mem_instr_addr} : mem_wa;
   assign mem_wen_mux = (rx_fifo_full) ? mem_wen_reinit : mem_wen;
   assign mem_funct3_mux = (rx_fifo_full) ? 3'b000 : mem_funct3;  // Store byte at a time
 
@@ -155,11 +155,12 @@ module top #(
   );
 
   logic rx_fifo_addr_sel;
-  assign rx_fifo_addr = (rx_fifo_addr_sel) ? instr_mem_reinit_addr : rx_fifo_wa;
+  assign rx_fifo_addr = (rx_fifo_addr_sel) ? buffered_instr_mem_reinit_addr : rx_fifo_wa;
 
   always_ff @(posedge clk) begin
     if (rx_fifo_full) begin
       mem_wen_reinit <= 1;
+      mem_instr_addr <= buffered_instr_mem_reinit_addr;
       buffered_instr_mem_reinit_addr <= instr_mem_reinit_addr;
       instr_mem_reinit_addr <= instr_mem_reinit_addr + 1;
       if (instr_mem_reinit_addr == 511) begin
@@ -174,6 +175,7 @@ module top #(
       mem_wen_reinit <= 0;
       buffered_instr_mem_reinit_addr <= 0;
       rx_fifo_addr_sel <= 1'b0;
+      mem_instr_addr <= 0;
     end
   end
 

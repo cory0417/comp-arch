@@ -88,23 +88,18 @@ module uart (
         end
         WRITE_FIFO: begin
           rx_data_ack <= 0;
-          if (rx_fifo_wa <= 511) begin
-            if (!data_written) begin
-              rx_fifo_wen  <= 1;
-              data_written <= 1;
-            end else begin
-              rx_fifo_wen <= 0;
-            end
-            if (rx_fifo_wa == 511) rx_fifo_full <= 1;
+          if (!data_written) begin
+            rx_fifo_wen  <= 1;
+            data_written <= 1;
           end else begin
-            rx_fifo_full <= 1;
+            rx_fifo_wen <= 0;
           end
-          if (rx_data_ready) begin  // Hold the state until the the signal is deasserted
-            rx_fifo_state <= WRITE_FIFO;
-          end else begin
+          // Flag FIFO full
+          if (rx_fifo_wa == 9'd511) rx_fifo_full <= 1;
+          if (!rx_data_ready) begin
             rx_fifo_state <= IDLE;
-            data_written <= 0;
-            rx_fifo_wa <= rx_fifo_wa + 1;  // increment address after writing
+            data_written  <= 0;
+            rx_fifo_wa    <= rx_fifo_wa + 1;
           end
         end
         default: begin
