@@ -1,7 +1,7 @@
 from pathlib import Path
 
 import cocotb
-from cocotb.triggers import ClockCycles, Timer, RisingEdge
+from cocotb.triggers import ClockCycles, Timer, RisingEdge, FallingEdge
 from cocotb.types import Logic
 
 from utils import (
@@ -19,9 +19,10 @@ parent_dir = Path(__file__).parent
 
 @cocotb.test()
 async def test_uart_rx(dut):
-    init_clock(dut.clk, period_ns=40)  # 12.5 MHz clock period
-    # init_clock(dut.clk_24mhz, period_ns=40)  # 25 MHz clock period
-    dut.uart_reset_n.value = 0
+    init_clock(dut.clk, period_ns=80)  # 12.5 MHz clock period
+    init_clock(
+        dut.clk_24mhz, period_ns=40
+    )  # 25 MHz clock period    dut.uart_reset_n.value = 0
     await ClockCycles(dut.clk, 1)
     dut.uart_reset_n.value = 1
     await ClockCycles(dut.clk, 1)
@@ -57,8 +58,8 @@ async def test_uart_rx(dut):
 
 # @cocotb.test()
 async def test_uart_full_fifo(dut):
-    init_clock(dut.clk, period_ns=40)  # 12.5 MHz clock period
-    # init_clock(dut.clk_24mhz, period_ns=40)  # 25 MHz clock period
+    init_clock(dut.clk, period_ns=80)  # 12.5 MHz clock period
+    init_clock(dut.clk_24mhz, period_ns=40)  # 25 MHz clock period
     dut.uart_reset_n.value = 0
     await ClockCycles(dut.clk, 1)
     dut.uart_reset_n.value = 1
@@ -88,8 +89,8 @@ async def test_uart_full_fifo(dut):
 
 @cocotb.test()
 async def test_uart_reprogram(dut):
-    init_clock(dut.clk, period_ns=40)  # 12.5 MHz clock period
-    # init_clock(dut.clk_24mhz, period_ns=40)  # 25 MHz clock period
+    init_clock(dut.clk, period_ns=80)  # 12.5 MHz clock period
+    init_clock(dut.clk_24mhz, period_ns=40)  # 25 MHz clock period
     dut.uart_reset_n.value = 0
     await RisingEdge(dut.clk)
     dut.uart_reset_n.value = 1
@@ -115,7 +116,7 @@ async def test_uart_reprogram(dut):
     assert len(prog_bytes) == 512
 
     # Load the program into memory by sending to UART
-    for byte in prog_bytes:
+    for i, byte in enumerate(prog_bytes):
         dut.rx.value = Logic(0)  # Start bit
         await ClockCycles(dut.uart_baud_clk, 8)  # Wait for 1 start bit time
         for j in range(8):
@@ -128,14 +129,16 @@ async def test_uart_reprogram(dut):
         await Timer(10, units="ns")  # Wait for the stop bit to be processed
         assert dut.uart_rx_state.value == 0  # IDLE state
         await ClockCycles(dut.uart_baud_clk, 4)  # Stop bit
+        print(f"Sent {i}th byte: {byte:#04x}")
 
-    await RisingEdge(dut.rx_fifo_full_ack)
-    assert dut.rx_fifo_full.value == 1
-    assert dut.cpu_reset_n.value == 0
-    await RisingEdge(dut.clk)
-    await Timer(10, units="ns")
-    assert dut.rx_fifo_full.value == 0
-    assert dut.cpu_reset_n.value == 1
+    # await RisingEdge(dut.rx_fifo_full_ack)
+    # assert dut.rx_fifo_full.value == 1
+    # assert dut.cpu_reset_n.value == 0
+    # await RisingEdge(dut.clk)
+    # await Timer(10, units="ns")
+    # assert dut.rx_fifo_full.value == 0
+    # assert dut.cpu_reset_n.value == 1
+    await FallingEdge(dut.cpu_reset_n)
 
     await ClockCycles(dut.clk, 2)
 

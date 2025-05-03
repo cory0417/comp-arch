@@ -483,43 +483,43 @@ async def test_integer_register_register(dut):
     assert registers(12) == 0x7FFFFFFF
 
 
-@cocotb.test()
-async def test_uart_rx(dut):
-    init_clock(dut.clk, period_ns=41.7)  # 24 MHz clock period
-    await RisingEdge(dut.clk)
-    dut.uart_reset_n.value = 0
-    await RisingEdge(dut.clk)
-    dut.uart_reset_n.value = 1
-    dut.u_uart.rx.value = 1
-    await RisingEdge(dut.clk)
-
-    data = 0b10110101  # Example data to be received
-
-    dut.u_uart.rx.value = Logic(0)  # Start bit
-    await ClockCycles(dut.u_uart.u_uart_rx.clk, 8)  # Wait for 1 start bit time
-    for i in range(8):
-        dut.u_uart.rx.value = Logic(bool(data & (1 << i)))  # Set the data bit
-        await ClockCycles(dut.u_uart.u_uart_rx.clk, 8)
-    dut.u_uart.rx.value = Logic(1)
-    assert dut.u_uart.rx_data.value == data
-
-    await ClockCycles(dut.u_uart.u_uart_rx.clk, 4)  # Stop bit
-    await Timer(1, units="ns")  # Wait for the stop bit to be processed
-    assert dut.u_uart.u_uart_rx.rx_state.value == 0  # IDLE state
-    await ClockCycles(dut.u_uart.u_uart_rx.clk, 4)  # Stop bit
-
-    # Try another data
-    data = 0x0F
-    dut.u_uart.rx.value = Logic(0)
-    await ClockCycles(dut.u_uart.u_uart_rx.clk, 8)
-    for i in range(8):
-        dut.u_uart.rx.value = Logic(bool(data & (1 << i)))
-        await ClockCycles(dut.u_uart.u_uart_rx.clk, 8)
-    dut.u_uart.rx.value = Logic(1)
-    await ClockCycles(dut.u_uart.u_uart_rx.clk, 4)
-    assert dut.u_uart.rx_data.value == data
-    await Timer(1, units="ns")
-    assert dut.u_uart.u_uart_rx.rx_state.value == 0
+# @cocotb.test()
+# async def test_uart_rx(dut):
+#     init_clock(dut.clk, period_ns=41.7)  # 24 MHz clock period
+#     await RisingEdge(dut.clk)
+#     dut.uart_reset_n.value = 0
+#     await RisingEdge(dut.clk)
+#     dut.uart_reset_n.value = 1
+#     dut.u_uart.rx.value = 1
+#     await RisingEdge(dut.clk)
+#
+#     data = 0b10110101  # Example data to be received
+#
+#     dut.u_uart.rx.value = Logic(0)  # Start bit
+#     await ClockCycles(dut.u_uart.u_uart_rx.clk, 8)  # Wait for 1 start bit time
+#     for i in range(8):
+#         dut.u_uart.rx.value = Logic(bool(data & (1 << i)))  # Set the data bit
+#         await ClockCycles(dut.u_uart.u_uart_rx.clk, 8)
+#     dut.u_uart.rx.value = Logic(1)
+#     assert dut.u_uart.rx_data.value == data
+#
+#     await ClockCycles(dut.u_uart.u_uart_rx.clk, 4)  # Stop bit
+#     await Timer(1, units="ns")  # Wait for the stop bit to be processed
+#     assert dut.u_uart.u_uart_rx.rx_state.value == 0  # IDLE state
+#     await ClockCycles(dut.u_uart.u_uart_rx.clk, 4)  # Stop bit
+#
+#     # Try another data
+#     data = 0x0F
+#     dut.u_uart.rx.value = Logic(0)
+#     await ClockCycles(dut.u_uart.u_uart_rx.clk, 8)
+#     for i in range(8):
+#         dut.u_uart.rx.value = Logic(bool(data & (1 << i)))
+#         await ClockCycles(dut.u_uart.u_uart_rx.clk, 8)
+#     dut.u_uart.rx.value = Logic(1)
+#     await ClockCycles(dut.u_uart.u_uart_rx.clk, 4)
+#     assert dut.u_uart.rx_data.value == data
+#     await Timer(1, units="ns")
+#     assert dut.u_uart.u_uart_rx.rx_state.value == 0
 
 
 def test_top():
@@ -546,7 +546,7 @@ def test_top():
         always=True,
         clean=True,
         verbose=True,
-        timescale=("1ns", "10ps"),
+        timescale=("1ns", "1ns"),
         waves=True,
         # NOTE: program can be passed as a parameter here
         build_args=[

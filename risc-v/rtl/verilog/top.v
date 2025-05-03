@@ -1,4 +1,9 @@
 module top (
+	_31b,
+	_29b,
+	_37a,
+	_36b,
+	_39a,
 	LED,
 	RGB_R,
 	RGB_G,
@@ -6,7 +11,12 @@ module top (
 	_20a,
 	_18a
 );
-	parameter INIT_FILE = "/Users/dkim/projects/comp-arch/risc-v/prog/build/blink";
+	parameter INIT_FILE = "/Users/dkim/projects/comp-arch/risc-v/prog/build/blink_single_led";
+	output reg _31b;
+	output reg _29b;
+	output reg _37a;
+	output reg _36b;
+	output wire _39a;
 	output wire LED;
 	output wire RGB_R;
 	output wire RGB_G;
@@ -14,24 +24,32 @@ module top (
 	output wire _20a;
 	input wire _18a;
 	wire clk;
-	wire clk_48mhz;
-	SB_HFOSC #(.CLKHF_DIV("0b00")) hfosc_inst(
+	wire clk_24mhz;
+	SB_HFOSC #(.CLKHF_DIV("0b10")) hfosc_inst(
 		.CLKHFEN(1'b1),
 		.CLKHFPU(1'b1),
-		.CLKHF(clk_48mhz)
+		.CLKHF(clk)
 	);
 	SB_PLL40_CORE #(
 		.FEEDBACK_PATH("SIMPLE"),
-		.DIVR(4'd3),
+		.DIVR(4'd0),
 		.DIVF(7'd63),
-		.DIVQ(3'd6),
+		.DIVQ(3'd5),
 		.FILTER_RANGE(3'd1)
 	) pll_inst(
-		.REFERENCECLK(clk_48mhz),
-		.PLLOUTCORE(clk),
+		.REFERENCECLK(clk),
+		.PLLOUTCORE(clk_24mhz),
 		.BYPASS(1'b0),
 		.RESETB(1'b1)
 	);
+	wire rx_data_ready;
+	wire rx_data_ack;
+	always @(posedge clk) begin
+		_31b <= LED;
+		_29b <= RGB_R;
+		_37a <= RGB_G;
+		_36b <= RGB_B;
+	end
 	wire cpu_reset_n;
 	wire [31:0] mem_ra;
 	wire [31:0] mem_wa;
@@ -77,12 +95,12 @@ module top (
 	wire [8:0] rx_fifo_addr;
 	reg [8:0] instr_mem_reinit_addr;
 	reg [8:0] buffered_instr_mem_reinit_addr;
+	reg [8:0] mem_instr_addr;
 	reg mem_wen_reinit;
-	reg use_uart_data = rx_fifo_full;
-	assign mem_wd_mux = (use_uart_data ? {24'b000000000000000000000000, instr_mem_reinit_data} : mem_wd);
-	assign mem_wa_mux = (use_uart_data ? {23'b00000000000000000000000, buffered_instr_mem_reinit_addr} : mem_wa);
-	assign mem_wen_mux = (use_uart_data ? mem_wen_reinit : mem_wen);
-	assign mem_funct3_mux = (use_uart_data ? 3'b000 : mem_funct3);
+	assign mem_wd_mux = (rx_fifo_full ? {24'b000000000000000000000000, instr_mem_reinit_data} : mem_wd);
+	assign mem_wa_mux = (rx_fifo_full ? {23'b00000000000000000000000, mem_instr_addr} : mem_wa);
+	assign mem_wen_mux = (rx_fifo_full ? mem_wen_reinit : mem_wen);
+	assign mem_funct3_mux = (rx_fifo_full ? 3'b000 : mem_funct3);
 	memory #(.INIT_FILE(INIT_FILE)) u_memory(
 		.clk(clk),
 		.write_mem(mem_wen_mux),
@@ -96,12 +114,18 @@ module top (
 		.green(RGB_G),
 		.blue(RGB_B)
 	);
-	wire internal_rx = _18a;
+	reg internal_rx_sync1;
+	reg internal_rx_sync2;
+	always @(posedge clk_24mhz) begin
+		internal_rx_sync1 <= _18a;
+		internal_rx_sync2 <= internal_rx_sync1;
+	end
 	uart u_uart(
 		.clk(clk),
-		.reset_n(uart_reset_n),
+		.clk_24mhz(clk_24mhz),
+		.reset_n(boot_reset_n),
 		.rx_fifo_full_ack(rx_fifo_full_ack),
-		.rx(internal_rx),
+		.rx(internal_rx_sync2),
 		.tx(_20a),
 		.rx_fifo_wd(rx_fifo_wd),
 		.rx_fifo_wa(rx_fifo_wa),
@@ -116,20 +140,27 @@ module top (
 		.rd(instr_mem_reinit_data)
 	);
 	reg rx_fifo_addr_sel;
-	assign rx_fifo_addr = (rx_fifo_addr_sel ? instr_mem_reinit_addr : rx_fifo_wa);
+	assign rx_fifo_addr = (rx_fifo_addr_sel ? buffered_instr_mem_reinit_addr : rx_fifo_wa);
 	always @(posedge clk)
 		if (rx_fifo_full) begin
 			mem_wen_reinit <= 1;
+			mem_instr_addr <= buffered_instr_mem_reinit_addr;
 			buffered_instr_mem_reinit_addr <= instr_mem_reinit_addr;
 			instr_mem_reinit_addr <= instr_mem_reinit_addr + 1;
-			rx_fifo_full_ack <= instr_mem_reinit_addr == 511;
+			if (instr_mem_reinit_addr == 511)
+				rx_fifo_full_ack <= 1;
+			else
+				rx_fifo_full_ack <= 0;
 			rx_fifo_addr_sel <= 1'b1;
 		end
 		else begin
 			instr_mem_reinit_addr <= 0;
-			buffered_instr_mem_reinit_addr <= 0;
-			mem_wen_reinit <= 0;
 			rx_fifo_full_ack <= 0;
+			mem_wen_reinit <= 0;
+			buffered_instr_mem_reinit_addr <= 0;
 			rx_fifo_addr_sel <= 1'b0;
+			mem_instr_addr <= 0;
 		end
+	assign rx_data_ready = u_uart.rx_data_ready;
+	assign rx_data_ack = u_uart.rx_data_ack;
 endmodule

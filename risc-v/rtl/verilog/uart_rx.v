@@ -33,14 +33,9 @@ module uart_rx (
 			case (rx_state)
 				2'd0: begin
 					rx_data_ready <= 0;
-					if (~rx) begin
+					oversample_counter <= 0;
+					if (~rx)
 						rx_state <= 2'd1;
-						oversample_counter <= oversample_counter + 1;
-						if (oversample_counter == (SampleOffset - 1))
-							oversample_counter <= 0;
-					end
-					else
-						oversample_counter <= 0;
 				end
 				2'd1: begin
 					oversample_counter <= oversample_counter + 1;

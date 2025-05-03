@@ -26,10 +26,9 @@ module risc_v (
 	wire [3:0] alu_control;
 	wire [2:0] instruction_type;
 	wire [31:0] imm_ext;
-	wire [6:0] op;
-	wire [2:0] funct3;
-	assign op = instr[6:0];
-	assign funct3 = instr[14:12];
+	reg [6:0] op;
+	reg [2:0] funct3;
+	reg funct7_5;
 	wire is_store;
 	wire is_load;
 	wire is_branch;
@@ -45,22 +44,19 @@ module risc_v (
 	control u_control(
 		.op(op),
 		.funct3(funct3),
-		.funct7_5(instr[30]),
+		.funct7_5(funct7_5),
 		.pc_src(pc_src),
 		.result_src(result_src),
 		.alu_control(alu_control),
 		.alu_src(alu_src),
 		.instruction_type(instruction_type)
 	);
-	wire [4:0] rs1_addr;
-	wire [4:0] rs2_addr;
-	wire [4:0] rd_addr;
+	reg [4:0] rs1_addr;
+	reg [4:0] rs2_addr;
+	reg [4:0] rd_addr;
 	wire [31:0] rs1;
 	wire [31:0] rs2;
 	reg [31:0] rd_data;
-	assign rs1_addr = instr[19:15];
-	assign rs2_addr = instr[24:20];
-	assign rd_addr = instr[11:7];
 	assign mem_wd = rs2;
 	assign mem_wa = rs1 + imm_ext;
 	register_file u_register_file(
@@ -136,6 +132,12 @@ module risc_v (
 						pc <= pc_next;
 					state <= 2'd1;
 					instr <= mem_rd;
+					op <= mem_rd[6:0];
+					funct3 <= mem_rd[14:12];
+					funct7_5 <= mem_rd[30];
+					rs1_addr <= mem_rd[19:15];
+					rs2_addr <= mem_rd[24:20];
+					rd_addr <= mem_rd[11:7];
 				end
 				2'd1: begin
 					if (!is_jal)

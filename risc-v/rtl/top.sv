@@ -1,5 +1,6 @@
 module top #(
-    parameter string INIT_FILE = "@INIT_FILE@"  // Replaced by Makefile
+    // verilog_lint: waive explicit-parameter-storage-type
+    parameter INIT_FILE = "@INIT_FILE@"  // Replaced by Makefile
 ) (
 `ifdef DEBUG
     output logic _31b,
@@ -8,10 +9,10 @@ module top #(
     output logic _36b,
     output logic _39a,
 `endif
-    // output logic LED,
-    // output logic RGB_R,
-    // output logic RGB_G,
-    // output logic RGB_B,
+    output logic LED,
+    output logic RGB_R,
+    output logic RGB_G,
+    output logic RGB_B,
     // UART
     output logic _20a,  // UART TX
 `ifdef COCOTB_SIM
@@ -20,40 +21,39 @@ module top #(
     input logic _18a  // Physical pin
 `endif
 );
-  logic LED, RGB_R, RGB_G, RGB_B;
 
 `ifndef COCOTB_SIM  // Hard IP doesn't work in cocotb simulation
-  logic clk, clk_48mhz;
+  logic clk, clk_24mhz;
   SB_HFOSC #(
-      .CLKHF_DIV("0b00")  // 48 MHz; 0b00 = 48 MHz, 0b01 = 24 MHz, 0b10 = 12 MHz, 0b11 = 6 MHz
+      .CLKHF_DIV("0b10")  // 48 MHz; 0b00 = 48 MHz, 0b01 = 24 MHz, 0b10 = 12 MHz, 0b11 = 6 MHz
   ) hfosc_inst (
       .CLKHFEN(1'b1),
       .CLKHFPU(1'b1),
-      .CLKHF  (clk_48mhz)
+      .CLKHF  (clk)
   );
   SB_PLL40_CORE #(
       .FEEDBACK_PATH("SIMPLE"),
-      .DIVR         (4'd3),      // Divide by (3+1); 0,1,2,…,15
+      .DIVR         (4'd0),      // Divide by (3+1); 0,1,2,…,15
       .DIVF         (7'd63),     // Multiply by (63+1); 0,1,..,63
-      .DIVQ         (3'd6),      // Divide by (2^6=64) => 12 MHz; 1,2,…,6
+      .DIVQ         (3'd5),      // Divide by (2^6=64) => 12 MHz; 1,2,…,6
       .FILTER_RANGE (3'd1)
   ) pll_inst (
-      .REFERENCECLK(clk_48mhz),
-      .PLLOUTCORE(clk),
+      .REFERENCECLK(clk),
+      .PLLOUTCORE(clk_24mhz),
       .BYPASS(1'b0),
       .RESETB(1'b1)
   );
 `else
-  logic clk;
+  logic clk, clk_24mhz;
 `endif
 `ifdef DEBUG
+  logic rx_data_ready, rx_data_ack;
   // For debugging
-  // assign _39a = clk;
   always_ff @(posedge clk) begin
     _31b <= LED;
-    _29b <= RGB_R;
-    _37a <= RGB_G;
-    _36b <= RGB_B;
+    _29b <= RGB_R;  // rx_fifo_full;
+    _37a <= RGB_G;  // rx_data_ready;
+    _36b <= RGB_B;  // internal_rx_sync2;
   end
 `endif
 
@@ -127,18 +127,26 @@ module top #(
       .green(RGB_G),
       .blue(RGB_B)
   );
-
 `ifdef COCOTB_SIM
-  wire internal_rx = rx;
+  reg internal_rx_sync1, internal_rx_sync2;
+  always @(posedge clk_24mhz) begin
+    internal_rx_sync1 <= rx;
+    internal_rx_sync2 <= internal_rx_sync1;
+  end
 `else
-  wire internal_rx = _18a;
+  reg internal_rx_sync1, internal_rx_sync2;
+  always @(posedge clk_24mhz) begin
+    internal_rx_sync1 <= _18a;
+    internal_rx_sync2 <= internal_rx_sync1;
+  end
 `endif
 
   uart u_uart (
       .clk(clk),
-      .reset_n(uart_reset_n),
+      .clk_24mhz(clk_24mhz),
+      .reset_n(boot_reset_n),
       .rx_fifo_full_ack(rx_fifo_full_ack),
-      .rx(internal_rx),
+      .rx(internal_rx_sync2),
       .tx(_20a),
       .rx_fifo_wd(rx_fifo_wd),
       .rx_fifo_wa(rx_fifo_wa),
@@ -189,6 +197,10 @@ module top #(
   assign uart_rx_state = u_uart.u_uart_rx.rx_state;
   assign uart_rx_data = u_uart.rx_data;
   assign registers = u_risc_v.u_register_file.registers;
+`endif
+`ifdef DEBUG
+  assign rx_data_ready = u_uart.rx_data_ready;
+  assign rx_data_ack   = u_uart.rx_data_ack;
 `endif
 
 endmodule

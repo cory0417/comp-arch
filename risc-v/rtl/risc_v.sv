@@ -24,8 +24,7 @@ module risc_v (
 
   logic [6:0] op;
   logic [2:0] funct3;
-  assign op = instr[6:0];
-  assign funct3 = instr[14:12];
+  logic funct7_5;
 
   logic is_store, is_load, is_branch, is_jal;
   assign is_store  = (op == OP_STORE);
@@ -37,7 +36,7 @@ module risc_v (
   control u_control (
       .op(op),
       .funct3(funct3),
-      .funct7_5(instr[30]),
+      .funct7_5(funct7_5),
       .pc_src(pc_src),
       .result_src(result_src),
       .alu_control(alu_control),
@@ -48,13 +47,10 @@ module risc_v (
   /*--- REGISTER FILE ---*/
   logic [4:0] rs1_addr, rs2_addr, rd_addr;
   logic [31:0] rs1, rs2, rd_data;
-  assign rs1_addr = instr[19:15];
-  assign rs2_addr = instr[24:20];
-  assign rd_addr  = instr[11:7];
 
   // Memory-related signals based on instruction
-  assign mem_wd   = rs2;  // Write data to memory is always rs2
-  assign mem_wa   = rs1 + imm_ext;  // Address to write in memory is always rs1 + immediate
+  assign mem_wd = rs2;  // Write data to memory is always rs2
+  assign mem_wa = rs1 + imm_ext;  // Address to write in memory is always rs1 + immediate
 
   register_file u_register_file (
       .clk(clk),
@@ -141,6 +137,12 @@ module risc_v (
           if (is_jal) pc <= pc_next;
           state <= EXECUTE;
           instr <= mem_rd;
+          op    <= mem_rd[6:0];
+          funct3 <= mem_rd[14:12];
+          funct7_5 <= mem_rd[30];
+          rs1_addr <= mem_rd[19:15];
+          rs2_addr <= mem_rd[24:20];
+          rd_addr  <= mem_rd[11:7];
         end
         EXECUTE: begin
           if (!is_jal) pc <= pc_next;
