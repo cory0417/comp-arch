@@ -11,7 +11,7 @@ module top (
 	_20a,
 	_18a
 );
-	parameter INIT_FILE = "/Users/dkim/projects/comp-arch/risc-v/prog/build/blink_single_led";
+	parameter INIT_FILE = "/Users/dkim/projects/comp-arch/risc-v/prog/build/blink";
 	output reg _31b;
 	output reg _29b;
 	output reg _37a;
@@ -23,34 +23,23 @@ module top (
 	output wire RGB_B;
 	output wire _20a;
 	input wire _18a;
+	wire cpu_reset_n;
 	wire clk;
-	wire clk_24mhz;
 	SB_HFOSC #(.CLKHF_DIV("0b10")) hfosc_inst(
 		.CLKHFEN(1'b1),
 		.CLKHFPU(1'b1),
 		.CLKHF(clk)
 	);
-	SB_PLL40_CORE #(
-		.FEEDBACK_PATH("SIMPLE"),
-		.DIVR(4'd0),
-		.DIVF(7'd63),
-		.DIVQ(3'd5),
-		.FILTER_RANGE(3'd1)
-	) pll_inst(
-		.REFERENCECLK(clk),
-		.PLLOUTCORE(clk_24mhz),
-		.BYPASS(1'b0),
-		.RESETB(1'b1)
-	);
 	wire rx_data_ready;
 	wire rx_data_ack;
+	wire rx_fifo_full;
+	wire rx_fifo_wen;
 	always @(posedge clk) begin
-		_31b <= LED;
-		_29b <= RGB_R;
-		_37a <= RGB_G;
-		_36b <= RGB_B;
+		_31b <= rx_fifo_full;
+		_29b <= rx_data_ready;
+		_37a <= rx_fifo_wen;
+		_36b <= cpu_reset_n;
 	end
-	wire cpu_reset_n;
 	wire [31:0] mem_ra;
 	wire [31:0] mem_wa;
 	wire [31:0] mem_rd;
@@ -61,7 +50,6 @@ module top (
 	reg reset_counter;
 	initial did_boot = 0;
 	initial reset_counter = 0;
-	wire rx_fifo_full;
 	always @(posedge clk) begin
 		did_boot <= 1;
 		if (!did_boot)
@@ -88,7 +76,6 @@ module top (
 	wire [2:0] mem_funct3_mux;
 	wire uart_reset_n;
 	reg rx_fifo_full_ack;
-	wire rx_fifo_wen;
 	wire [7:0] rx_fifo_wd;
 	wire [8:0] rx_fifo_wa;
 	wire [7:0] instr_mem_reinit_data;
@@ -114,18 +101,13 @@ module top (
 		.green(RGB_G),
 		.blue(RGB_B)
 	);
-	reg internal_rx_sync1;
-	reg internal_rx_sync2;
-	always @(posedge clk_24mhz) begin
-		internal_rx_sync1 <= _18a;
-		internal_rx_sync2 <= internal_rx_sync1;
-	end
+	wire internal_rx;
+	assign internal_rx = _18a;
 	uart u_uart(
 		.clk(clk),
-		.clk_24mhz(clk_24mhz),
-		.reset_n(boot_reset_n),
+		.reset_n(uart_reset_n & boot_reset_n),
 		.rx_fifo_full_ack(rx_fifo_full_ack),
-		.rx(internal_rx_sync2),
+		.rx(internal_rx),
 		.tx(_20a),
 		.rx_fifo_wd(rx_fifo_wd),
 		.rx_fifo_wa(rx_fifo_wa),
@@ -140,7 +122,7 @@ module top (
 		.rd(instr_mem_reinit_data)
 	);
 	reg rx_fifo_addr_sel;
-	assign rx_fifo_addr = (rx_fifo_addr_sel ? buffered_instr_mem_reinit_addr : rx_fifo_wa);
+	assign rx_fifo_addr = (rx_fifo_addr_sel ? instr_mem_reinit_addr : rx_fifo_wa);
 	always @(posedge clk)
 		if (rx_fifo_full) begin
 			mem_wen_reinit <= 1;

@@ -18,7 +18,6 @@ Notes:
 
 module uart (
     input logic clk,
-    input logic clk_24mhz,
     input logic reset_n,
     input logic rx_fifo_full_ack,
     input logic rx,  // mapped to physical pin
@@ -29,21 +28,12 @@ module uart (
     output logic rx_fifo_full
 );
 
-  logic out_clk;
-
-
   // UART Rx
   logic rx_data_ready, rx_data_ack;
   logic [7:0] rx_data;
 
-  uart_clk u_uart_clk (
-      .clk(clk_24mhz),
-      .reset_n(reset_n),
-      .out_clk(out_clk)
-  );
-
   uart_rx u_uart_rx (
-      .clk(out_clk),
+      .clk(clk),
       .reset_n(reset_n),
       .rx(rx),
       .rx_data_ack(rx_data_ack),

@@ -1,6 +1,5 @@
 module uart (
 	clk,
-	clk_24mhz,
 	reset_n,
 	rx_fifo_full_ack,
 	rx,
@@ -11,7 +10,6 @@ module uart (
 	rx_fifo_full
 );
 	input wire clk;
-	input wire clk_24mhz;
 	input wire reset_n;
 	input wire rx_fifo_full_ack;
 	input wire rx;
@@ -20,17 +18,11 @@ module uart (
 	output reg [8:0] rx_fifo_wa;
 	output reg rx_fifo_wen;
 	output reg rx_fifo_full;
-	wire out_clk;
 	wire rx_data_ready;
 	reg rx_data_ack;
 	wire [7:0] rx_data;
-	uart_clk u_uart_clk(
-		.clk(clk_24mhz),
-		.reset_n(reset_n),
-		.out_clk(out_clk)
-	);
 	uart_rx u_uart_rx(
-		.clk(out_clk),
+		.clk(clk),
 		.reset_n(reset_n),
 		.rx(rx),
 		.rx_data_ack(rx_data_ack),

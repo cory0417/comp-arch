@@ -7,7 +7,7 @@ parent_dir = Path(__file__).parent
 
 def uart_prog():
     """UART program to send data to the UART receiver."""
-    serial_port = "/dev/tty.usbserial-AB9EUWNP"
+    serial_port = "/dev/tty.usbserial-AB9EUWNP"  # Replace with the correct port for your system
     baud_rate = 115200
     timeout_sec = 1
 
@@ -26,7 +26,7 @@ def uart_prog():
         return
 
     # Load program from hex file
-    prog = load_hex_from_txt(parent_dir / "prog/build/blink.txt")
+    prog = load_hex_from_txt(parent_dir / "prog/build/blink_single_led.txt")
 
     if len(prog) > 128:
         print("Error: Program too large to fit in 512-byte UART image")
