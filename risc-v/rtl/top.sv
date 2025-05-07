@@ -14,7 +14,6 @@ module top #(
     output logic RGB_G,
     output logic RGB_B,
     // UART
-    output logic _20a,  // UART TX
 `ifdef COCOTB_SIM
     input logic rx  // Drive from cocotb
 `else
@@ -139,7 +138,6 @@ module top #(
       .reset_n(uart_reset_n & boot_reset_n),
       .rx_fifo_full_ack(rx_fifo_full_ack),
       .rx(internal_rx),
-      .tx(_20a),
       .rx_fifo_wd(rx_fifo_wd),
       .rx_fifo_wa(rx_fifo_wa),
       .rx_fifo_wen(rx_fifo_wen),
