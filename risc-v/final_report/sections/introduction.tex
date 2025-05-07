@@ -1,0 +1,15 @@
+\section{Introduction}
+
+From the previous mini project, I have implemented a RISC-V core that can execute a simple program. Thus, in this project, I wanted to extend the functionality of the core by adding a UART peripheral that can be used to load programs into the memory for execution. The envisioned steps were as follows:
+
+\begin{enumerate}
+    \item User sends a program to the FPGA via physical UART connection.
+    \item FPGA stores the program in a dedicated FIFO.
+    \item When the FIFO reaches the maximum capacity (512 bytes), the core is held in reset until the FIFO is transferred to the instruction memory.
+    \item The core is released from reset when the FIFO is empty.
+    \item The core then executes the program.
+\end{enumerate}
+
+
+
+

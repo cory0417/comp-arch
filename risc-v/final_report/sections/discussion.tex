@@ -1,0 +1,12 @@
+\section{Discussion}
+
+Despite the success in the testbenches, there were issues implementing the UART peripheral on the hardware.
+I used a simple python script to send program data bytes to the UART pin on the FPGA using a FTDI USB-to-serial converter.
+The program data was sent byte by byte for 512 bytes.
+I confirmed that the data was being sent correctly by using a logic analyzer.
+However, the UART receiver was not able to receive the data correctly, and I didn't see any of the signals related to the receiver changing when trying to debug.
+I had a suspicion that there might be some noise in the physical pins.
+I tried to fix this by adding a simple debounce logic on the FPGA rx line, but this didn't fix the issue.
+I tried other tweaks to various configurations that might have been causing the issue, but ultimately, I was unable to get the UART peripheral to work.
+Nonetheless, it was a fun project, and I learned a lot about handshake protocols for managing data transfer, clock domains, and fundamental UART concepts.
+
